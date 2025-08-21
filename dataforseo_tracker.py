@@ -34,6 +34,25 @@ class KeywordPosition:
     location: str
     language: str
     date: str
+    previous_position: int = 0
+    
+    @property
+    def position_change(self) -> int:
+        """Calcule le changement de position (négatif = amélioration)"""
+        if self.previous_position == 0:
+            return 0
+        return self.position - self.previous_position
+    
+    @property
+    def trend_emoji(self) -> str:
+        """Retourne l'emoji de tendance"""
+        change = self.position_change
+        if change < 0:
+            return "🟢"  # Amélioration
+        elif change > 0:
+            return "🔴"  # Dégradation
+        else:
+            return "⚪"  # Stable
 
 
 class DataForSEOTracker:
@@ -95,16 +114,16 @@ class DataForSEOTracker:
         with open(config_file, 'w', encoding='utf-8') as f:
             json.dump(default_config, f, indent=4, ensure_ascii=False)
     
-    def get_serp_results(self, keyword: str) -> Optional[Dict]:
+    def get_serp_results(self, keyword: str, tracking_config: Dict) -> Optional[Dict]:
         """Récupère les résultats SERP pour un mot-clé"""
         endpoint = f"{self.base_url}/serp/google/organic/live/advanced"
         
         payload = [{
             "keyword": keyword,
-            "location_code": self.config['tracking']['location_code'],
-            "language_code": self.config['tracking']['language_code'],
-            "device": self.config['tracking']['device'],
-            "os": "windows" if self.config['tracking']['device'] == "desktop" else "android"
+            "location_code": tracking_config['location_code'],
+            "language_code": tracking_config['language_code'],
+            "device": tracking_config['device'],
+            "os": "windows" if tracking_config['device'] == "desktop" else "android"
         }]
         
         try:
@@ -163,35 +182,111 @@ class DataForSEOTracker:
     
     def track_keywords(self) -> List[KeywordPosition]:
         """Lance le suivi pour tous les mots-clés configurés"""
-        print(f"Début du suivi pour {len(self.config['tracking']['keywords'])} mots-clés...")
-        print(f"Domaine: {self.config['tracking']['domain']}")
-        print("-" * 60)
-        
         results = []
-        keywords = self.config['tracking']['keywords']
         
-        for i, keyword in enumerate(keywords, 1):
-            print(f"[{i}/{len(keywords)}] Traitement de '{keyword}'...")
+        # Support des anciennes et nouvelles structures de config
+        tracking_configs = self.config['tracking']
+        if isinstance(tracking_configs, dict):
+            tracking_configs = [tracking_configs]
+        
+        for tracking_config in tracking_configs:
+            device = tracking_config['device']
+            domain = tracking_config['domain']
+            keywords = tracking_config['keywords']
             
-            serp_data = self.get_serp_results(keyword)
-            if serp_data:
-                position_data = self.find_domain_position(serp_data, self.config['tracking']['domain'])
-                if position_data:
-                    results.append(position_data)
-                    if position_data.position <= 100:
-                        print(f"  ✅ Position {position_data.position} - {position_data.url}")
+            print(f"Début du suivi {device.upper()} pour {len(keywords)} mots-clés...")
+            print(f"Domaine: {domain}")
+            print("-" * 60)
+            
+            for i, keyword in enumerate(keywords, 1):
+                print(f"[{device}] [{i}/{len(keywords)}] Traitement de '{keyword}'...")
+                
+                serp_data = self.get_serp_results(keyword, tracking_config)
+                if serp_data:
+                    position_data = self.find_domain_position(serp_data, domain)
+                    if position_data:
+                        # Ajouter l'info du device au keyword pour différencier
+                        position_data.keyword = f"{keyword} ({device})"
+                        results.append(position_data)
+                        if position_data.position <= 100:
+                            print(f"  ✅ Position {position_data.position} - {position_data.url}")
+                        else:
+                            print(f"  ❌ Non classé (>100)")
                     else:
-                        print(f"  ❌ Non classé (>100)")
+                        print(f"  ⚠️ Aucune donnée trouvée")
                 else:
-                    print(f"  ⚠️ Aucune donnée trouvée")
-            else:
-                print(f"  ❌ Erreur lors de la récupération")
+                    print(f"  ❌ Erreur lors de la récupération")
+                
+                # Pause pour éviter la surcharge de l'API
+                if i < len(keywords):
+                    time.sleep(1)
             
-            # Pause pour éviter la surcharge de l'API
-            if i < len(keywords):
-                time.sleep(1)
+            print()
         
         return results
+    
+    def get_previous_day_positions(self) -> Dict[str, int]:
+        """Récupère les positions d'hier via l'API Data for SEO"""
+        previous_positions = {}
+        
+        # Support des anciennes et nouvelles structures de config
+        tracking_configs = self.config['tracking']
+        if isinstance(tracking_configs, dict):
+            tracking_configs = [tracking_configs]
+        
+        # Date d'hier
+        yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+        
+        for tracking_config in tracking_configs:
+            device = tracking_config['device']
+            keywords = tracking_config['keywords']
+            
+            print(f"Récupération positions {device} d'hier ({yesterday})...")
+            
+            for keyword in keywords:
+                # Récupérer les positions d'hier
+                endpoint = f"{self.base_url}/serp/google/organic/live/advanced"
+                
+                payload = [{
+                    "keyword": keyword,
+                    "location_code": tracking_config['location_code'],
+                    "language_code": tracking_config['language_code'],
+                    "device": tracking_config['device'],
+                    "os": "windows" if tracking_config['device'] == "desktop" else "android"
+                }]
+                
+                try:
+                    response = self.session.post(endpoint, json=payload)
+                    response.raise_for_status()
+                    data = response.json()
+                    
+                    if data['status_code'] == 20000 and data['tasks'][0]['result']:
+                        serp_data = data['tasks'][0]['result'][0]
+                        domain = tracking_config['domain']
+                        domain_clean = domain.replace('www.', '').lower()
+                        
+                        # Chercher la position du domaine
+                        position = 999  # Non trouvé par défaut
+                        if 'items' in serp_data:
+                            for item in serp_data['items']:
+                                if item['type'] == 'organic':
+                                    result_domain = item.get('domain', '').replace('www.', '').lower()
+                                    if domain_clean == result_domain:
+                                        position = item.get('rank_group', 999)
+                                        break
+                        
+                        keyword_with_device = f"{keyword} ({device})"
+                        previous_positions[keyword_with_device] = position
+                        
+                except Exception as e:
+                    print(f"Erreur récupération historique pour '{keyword}' ({device}): {e}")
+                    keyword_with_device = f"{keyword} ({device})"
+                    previous_positions[keyword_with_device] = 0
+                
+                # Pause pour éviter la surcharge
+                time.sleep(0.5)
+        
+        return previous_positions
     
     def export_to_csv(self, positions: List[KeywordPosition]) -> str:
         """Exporte les résultats en CSV"""
@@ -235,34 +330,109 @@ class DataForSEOTracker:
         # Mots-clés non classés
         unranked = [p for p in positions if p.position > 100]
         
+        # Récupérer le domaine (compatible ancien/nouveau format)
+        tracking_configs = self.config['tracking']
+        if isinstance(tracking_configs, dict):
+            domain = tracking_configs['domain']
+        else:
+            domain = tracking_configs[0]['domain']
+        
         html = f"""
         <html>
         <head>
             <style>
-                body {{ font-family: Arial, sans-serif; margin: 20px; }}
-                .header {{ background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }}
-                .stats {{ display: flex; gap: 20px; margin-bottom: 20px; }}
-                .stat-card {{ background-color: #e9ecef; padding: 15px; border-radius: 5px; text-align: center; flex: 1; }}
-                .stat-value {{ font-size: 24px; font-weight: bold; color: #2c3e50; }}
-                .stat-label {{ color: #6c757d; font-size: 14px; }}
-                table {{ width: 100%; border-collapse: collapse; margin-bottom: 20px; }}
-                th, td {{ padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }}
-                th {{ background-color: #f8f9fa; font-weight: bold; }}
-                .position-good {{ color: #28a745; font-weight: bold; }}
-                .position-medium {{ color: #ffc107; font-weight: bold; }}
-                .position-bad {{ color: #dc3545; font-weight: bold; }}
-                .unranked {{ color: #6c757d; }}
+                body {{ 
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+                    margin: 0; 
+                    padding: 20px; 
+                    background-color: #f9fafb; 
+                    color: #1f2937;
+                    line-height: 1.6;
+                }}
+                .container {{ max-width: 800px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }}
+                .header {{ 
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                    color: white; 
+                    padding: 30px; 
+                    text-align: center;
+                }}
+                .header h1 {{ margin: 0; font-size: 28px; font-weight: 600; }}
+                .header p {{ margin: 8px 0 0 0; opacity: 0.9; font-size: 16px; }}
+                .content {{ padding: 30px; }}
+                .stats {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }}
+                .stat-card {{ 
+                    background: #f8fafc; 
+                    padding: 20px; 
+                    border-radius: 8px; 
+                    text-align: center; 
+                    border: 1px solid #e2e8f0;
+                }}
+                .stat-value {{ font-size: 28px; font-weight: 700; color: #1e40af; margin-bottom: 4px; }}
+                .stat-label {{ color: #64748b; font-size: 14px; font-weight: 500; }}
+                .section-title {{ 
+                    font-size: 20px; 
+                    font-weight: 600; 
+                    margin: 30px 0 15px 0; 
+                    color: #1f2937;
+                    border-bottom: 2px solid #e5e7eb;
+                    padding-bottom: 8px;
+                }}
+                table {{ 
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    margin-bottom: 25px; 
+                    background: white;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 8px;
+                    overflow: hidden;
+                }}
+                th {{ 
+                    background: #f9fafb; 
+                    padding: 16px 12px; 
+                    font-weight: 600; 
+                    color: #374151;
+                    border-bottom: 1px solid #e5e7eb;
+                    font-size: 14px;
+                }}
+                td {{ 
+                    padding: 14px 12px; 
+                    border-bottom: 1px solid #f3f4f6; 
+                    font-size: 14px;
+                }}
+                tr:last-child td {{ border-bottom: none; }}
+                tr:hover {{ background-color: #f9fafb; }}
+                .position-good {{ color: #059669; font-weight: 600; }}
+                .position-medium {{ color: #d97706; font-weight: 600; }}
+                .position-bad {{ color: #dc2626; font-weight: 600; }}
+                .unranked {{ color: #6b7280; }}
+                .keyword {{ font-weight: 500; color: #1f2937; }}
+                .url {{ color: #3b82f6; text-decoration: none; }}
+                .url:hover {{ text-decoration: underline; }}
+                .device-badge {{ 
+                    display: inline-block; 
+                    padding: 2px 8px; 
+                    border-radius: 12px; 
+                    font-size: 11px; 
+                    font-weight: 500; 
+                    margin-left: 8px;
+                }}
+                .device-desktop {{ background: #dbeafe; color: #1d4ed8; }}
+                .device-mobile {{ background: #dcfce7; color: #166534; }}
+                .trend-up {{ color: #059669; font-weight: 600; }}
+                .trend-down {{ color: #dc2626; font-weight: 600; }}
+                .trend-same {{ color: #6b7280; font-weight: 500; }}
             </style>
         </head>
         <body>
-            <div class="header">
-                <h1>Rapport de positions SEO - {datetime.now().strftime('%d/%m/%Y')}</h1>
-                <p>Domaine: <strong>{self.config['tracking']['domain']}</strong></p>
-                <p>Localisation: {positions[0].location if positions else 'N/A'} | 
-                   Langue: {positions[0].language if positions else 'N/A'}</p>
-            </div>
-            
-            <div class="stats">
+            <div class="container">
+                <div class="header">
+                    <h1>📊 Rapport de positions SEO</h1>
+                    <p>{datetime.now().strftime('%d/%m/%Y')} • Domaine: <strong>{domain}</strong></p>
+                    <p>📍 Localisation: France | 🇫🇷 Langue: Français</p>
+                </div>
+                
+                <div class="content">
+                    <div class="stats">
                 <div class="stat-card">
                     <div class="stat-value">{total_keywords}</div>
                     <div class="stat-label">Mots-clés suivis</div>
@@ -284,11 +454,12 @@ class DataForSEOTracker:
         
         if top_positions:
             html += """
-            <h2>🏆 Top 10 des meilleures positions</h2>
+            <h2 class="section-title">🏆 Top des meilleures positions</h2>
             <table>
                 <tr>
                     <th>Mot-clé</th>
                     <th>Position</th>
+                    <th>Évolution</th>
                     <th>URL</th>
                     <th>Volume de recherche</th>
                 </tr>
@@ -296,11 +467,33 @@ class DataForSEOTracker:
             
             for pos in top_positions:
                 position_class = "position-good" if pos.position <= 10 else "position-medium" if pos.position <= 30 else "position-bad"
+                
+                # Extraire le device du nom du keyword
+                keyword_parts = pos.keyword.split(' (')
+                keyword_name = keyword_parts[0]
+                device = keyword_parts[1].rstrip(')') if len(keyword_parts) > 1 else ''
+                device_emoji = "💻" if device == "desktop" else "📱" if device == "mobile" else ""
+                device_badge = f'<span class="device-badge device-{device}">{device_emoji}</span>' if device else ''
+                
+                # Calcul de l'évolution
+                trend_class = ""
+                trend_text = ""
+                if pos.position_change < 0:
+                    trend_class = "trend-up"
+                    trend_text = f"{pos.trend_emoji} +{abs(pos.position_change)}"
+                elif pos.position_change > 0:
+                    trend_class = "trend-down"
+                    trend_text = f"{pos.trend_emoji} -{pos.position_change}"
+                else:
+                    trend_class = "trend-same"
+                    trend_text = f"{pos.trend_emoji} =" if pos.previous_position > 0 else "🆕 Nouveau"
+                
                 html += f"""
                 <tr>
-                    <td>{pos.keyword}</td>
+                    <td class="keyword">{keyword_name}{device_badge}</td>
                     <td class="{position_class}">#{pos.position}</td>
-                    <td><a href="{pos.url}" target="_blank">{pos.url[:60]}...</a></td>
+                    <td class="{trend_class}">{trend_text}</td>
+                    <td><a href="{pos.url}" class="url" target="_blank">{pos.url[:50]}...</a></td>
                     <td>{pos.search_volume:,}</td>
                 </tr>
                 """
@@ -309,7 +502,7 @@ class DataForSEOTracker:
         
         if unranked:
             html += f"""
-            <h2>❌ Mots-clés non classés ({len(unranked)})</h2>
+            <h2 class="section-title">❌ Mots-clés non classés ({len(unranked)})</h2>
             <table>
                 <tr>
                     <th>Mot-clé</th>
@@ -319,9 +512,15 @@ class DataForSEOTracker:
             """
             
             for pos in unranked[:20]:  # Limiter à 20 pour éviter des emails trop longs
+                keyword_parts = pos.keyword.split(' (')
+                keyword_name = keyword_parts[0]
+                device = keyword_parts[1].rstrip(')') if len(keyword_parts) > 1 else ''
+                device_emoji = "💻" if device == "desktop" else "📱" if device == "mobile" else ""
+                device_badge = f'<span class="device-badge device-{device}">{device_emoji}</span>' if device else ''
+                
                 html += f"""
                 <tr>
-                    <td>{pos.keyword}</td>
+                    <td class="keyword">{keyword_name}{device_badge}</td>
                     <td>{pos.search_volume:,}</td>
                     <td>{pos.cpc:.2f}€</td>
                 </tr>
@@ -333,6 +532,8 @@ class DataForSEOTracker:
                 html += f"<p><em>... et {len(unranked) - 20} autres mots-clés non classés</em></p>"
         
         html += """
+                </div>
+            </div>
         </body>
         </html>
         """
@@ -347,7 +548,14 @@ class DataForSEOTracker:
         
         # Création du message
         msg = MIMEMultipart('alternative')
-        msg['Subject'] = f"Rapport SEO {self.config['tracking']['domain']} - {datetime.now().strftime('%d/%m/%Y')}"
+        # Récupérer le domaine (compatible ancien/nouveau format)
+        tracking_configs = self.config['tracking']
+        if isinstance(tracking_configs, dict):
+            domain = tracking_configs['domain']
+        else:
+            domain = tracking_configs[0]['domain']
+        
+        msg['Subject'] = f"Rapport SEO {domain} - {datetime.now().strftime('%d/%m/%Y')}"
         msg['From'] = self.config['email']['sender_email']
         msg['To'] = ', '.join(self.config['email']['recipients'])
         
@@ -387,8 +595,16 @@ class DataForSEOTracker:
         print("=" * 70)
         
         try:
+            # Récupérer les positions d'hier via l'API
+            previous_positions = self.get_previous_day_positions()
+            print(f"📈 Positions d'hier récupérées: {len(previous_positions)} mots-clés")
+            
             # Suivi des positions
             positions = self.track_keywords()
+            
+            # Ajouter les données de comparaison
+            for pos in positions:
+                pos.previous_position = previous_positions.get(pos.keyword, 0)
             
             if not positions:
                 print("❌ Aucune position récupérée, arrêt du processus.")
@@ -416,7 +632,14 @@ class DataForSEOTracker:
             # Envoyer un email d'erreur
             try:
                 error_msg = MIMEText(f"Erreur lors du suivi SEO quotidien:\n\n{str(e)}", 'plain', 'utf-8')
-                error_msg['Subject'] = f"❌ Erreur suivi SEO {self.config['tracking']['domain']}"
+                # Récupérer le domaine pour l'email d'erreur
+                tracking_configs = self.config['tracking']
+                if isinstance(tracking_configs, dict):
+                    domain = tracking_configs['domain']
+                else:
+                    domain = tracking_configs[0]['domain']
+                
+                error_msg['Subject'] = f"❌ Erreur suivi SEO {domain}"
                 error_msg['From'] = self.config['email']['sender_email']
                 error_msg['To'] = ', '.join(self.config['email']['recipients'])
                 
@@ -444,8 +667,12 @@ def main():
         # Mode test
         if args.test:
             print("🧪 MODE TEST - Traitement des 3 premiers mots-clés seulement")
-            original_keywords = tracker.config['tracking']['keywords']
-            tracker.config['tracking']['keywords'] = original_keywords[:3]
+            tracking_configs = tracker.config['tracking']
+            if isinstance(tracking_configs, dict):
+                tracker.config['tracking']['keywords'] = tracking_configs['keywords'][:3]
+            else:
+                for config in tracking_configs:
+                    config['keywords'] = config['keywords'][:3]
         
         tracker.run_daily_tracking()
         

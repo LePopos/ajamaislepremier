@@ -1,0 +1,44 @@
+{
+    "api": {
+        "login": "yann@north-star.network",
+        "password": "ucyYwjkPFDRuWihg"
+    },
+    "tracking": [
+        {
+            "domain": "legrand.fr",
+            "keywords": [
+                "domotique",
+                "maison connectée",
+                "armoire electrique industrielle"
+            ],
+            "location_code": 2250,
+            "language_code": "fr",
+            "device": "desktop"
+        },
+        {
+            "domain": "legrand.fr",
+            "keywords": [
+                "domotique",
+                "maison connectée",
+                "armoire electrique industrielle"
+            ],
+            "location_code": 2250,
+            "language_code": "fr",
+            "device": "mobile"
+        }
+    ],
+    "email": {
+        "smtp_server": "smtp.gmail.com",
+        "smtp_port": 587,
+        "sender_email": "patatecrackito@gmail.com",
+        "sender_password": "vivg vwrp rqfx gcpn",
+        "recipients": [
+            "jules.ostyn@pixalione.com"
+        ]
+    },
+    "reports": {
+        "csv_export": true,
+        "csv_filename": "positions_report_{date}.csv",
+        "history_days": 30
+    }
+}
