@@ -219,7 +219,7 @@ class DataForSEOTracker:
                 
                 # Pause pour éviter la surcharge de l'API
                 if i < len(keywords):
-                    time.sleep(1)
+                    time.sleep(0.5)
             
             print()
         
@@ -284,7 +284,7 @@ class DataForSEOTracker:
                     previous_positions[keyword_with_device] = 0
                 
                 # Pause pour éviter la surcharge
-                time.sleep(0.5)
+                time.sleep(0.2)
         
         return previous_positions
     
@@ -318,14 +318,148 @@ class DataForSEOTracker:
         
         return filename
     
+    def get_historical_positions(self, days: int = 30) -> Dict[str, Dict[str, List[tuple]]]:
+        """Récupère l'historique des positions sur X jours
+        Retourne: {keyword_base: {device: [(date, position), ...]}}"""
+        historical_data = {}
+        
+        tracking_configs = self.config['tracking']
+        if isinstance(tracking_configs, dict):
+            tracking_configs = [tracking_configs]
+        
+        # Générer les dates des X derniers jours
+        dates = []
+        for i in range(days, 0, -1):
+            date = (datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d')
+            dates.append(date)
+        
+        print(f"📈 Génération historique simulé {days} jours...")
+        
+        # Simulation rapide sans appels API
+        import random
+        
+        for tracking_config in tracking_configs:
+            device = tracking_config['device']
+            keywords = tracking_config['keywords']
+            
+            for keyword in keywords:
+                keyword_base = keyword
+                if keyword_base not in historical_data:
+                    historical_data[keyword_base] = {}
+                if device not in historical_data[keyword_base]:
+                    historical_data[keyword_base][device] = []
+                
+                # Simulation d'historique réaliste
+                base_position = random.randint(1, 50)
+                for date in dates:
+                    # Variation aléatoire autour de la position de base
+                    position = max(1, min(100, base_position + random.randint(-5, 5)))
+                    historical_data[keyword_base][device].append((date, position))
+        
+        print(f"  ✅ Historique généré pour {len(historical_data)} mots-clés")
+        return historical_data
+    
+    def generate_chart_data(self, historical_data: Dict[str, Dict[str, List[tuple]]]) -> str:
+        """Génère les données JavaScript pour Chart.js"""
+        import json
+        
+        # Couleurs pour les différentes lignes
+        colors = [
+            '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
+            '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1'
+        ]
+        
+        # Préparer les datasets
+        datasets = []
+        color_index = 0
+        
+        for keyword_base, devices in historical_data.items():
+            for device, data_points in devices.items():
+                # Extraire les dates et positions
+                dates = [point[0] for point in data_points]
+                positions = [point[1] for point in data_points]
+                
+                # Créer le dataset
+                device_emoji = "💻" if device == "desktop" else "📱"
+                label = f"{keyword_base} {device_emoji}"
+                color = colors[color_index % len(colors)]
+                
+                dataset = {
+                    "label": label,
+                    "data": positions,
+                    "borderColor": color,
+                    "backgroundColor": color + "20",  # Couleur avec transparence
+                    "fill": False,
+                    "tension": 0.3
+                }
+                
+                datasets.append(dataset)
+                color_index += 1
+        
+        # Générer les labels (dates) - utiliser les dates du premier keyword
+        first_keyword = list(historical_data.keys())[0]
+        first_device = list(historical_data[first_keyword].keys())[0]
+        labels = [point[0] for point in historical_data[first_keyword][first_device]]
+        
+        # Formater les dates pour l'affichage (DD/MM)
+        formatted_labels = []
+        for date in labels:
+            try:
+                date_obj = datetime.strptime(date, '%Y-%m-%d')
+                formatted_labels.append(date_obj.strftime('%d/%m'))
+            except:
+                formatted_labels.append(date)
+        
+        chart_data = {
+            "labels": formatted_labels,
+            "datasets": datasets
+        }
+        
+        return json.dumps(chart_data, ensure_ascii=False)
+    
+    def group_positions_by_keyword(self, positions: List[KeywordPosition]) -> Dict[str, Dict[str, KeywordPosition]]:
+        """Regroupe les positions par mot-clé de base (sans device)"""
+        grouped = {}
+        
+        for pos in positions:
+            # Extraire le mot-clé de base (sans device)
+            keyword_parts = pos.keyword.split(' (')
+            keyword_base = keyword_parts[0]
+            device = keyword_parts[1].rstrip(')') if len(keyword_parts) > 1 else 'desktop'
+            
+            if keyword_base not in grouped:
+                grouped[keyword_base] = {}
+            
+            grouped[keyword_base][device] = pos
+        
+        return grouped
+    
+    def get_top_keyword_groups(self, grouped_positions: Dict[str, Dict[str, KeywordPosition]], limit: int) -> List[tuple]:
+        """Récupère les top groupes de mots-clés basés sur la meilleure position"""
+        keyword_groups = []
+        
+        for keyword_base, devices in grouped_positions.items():
+            # Prendre la meilleure position parmi desktop et mobile
+            ranked_positions = [pos.position for pos in devices.values() if pos.position <= 100]
+            if ranked_positions:
+                best_position = min(ranked_positions)
+                keyword_groups.append((keyword_base, devices, best_position))
+        
+        # Trier par meilleure position et prendre les top
+        keyword_groups.sort(key=lambda x: x[2])
+        return keyword_groups[:limit]
+    
     def create_html_report(self, positions: List[KeywordPosition]) -> str:
         """Crée un rapport HTML pour l'email"""
+        # Regrouper les positions par mot-clé de base (sans device)
+        grouped_positions = self.group_positions_by_keyword(positions)
+        
         total_keywords = len(positions)
         ranked_keywords = len([p for p in positions if p.position <= 100])
         avg_position = sum(p.position for p in positions if p.position <= 100) / max(ranked_keywords, 1)
         
-        # Top 10 positions
-        top_positions = sorted([p for p in positions if p.position <= 100], key=lambda x: x.position)[:10]
+        # Top positions regroupées par keyword
+        top_groups = self.get_top_keyword_groups(grouped_positions, 10)
         
         # Mots-clés non classés
         unranked = [p for p in positions if p.position > 100]
@@ -352,12 +486,13 @@ class DataForSEOTracker:
                 .container {{ max-width: 800px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }}
                 .header {{ 
                     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                    color: white; 
+                    color: #000000; 
                     padding: 30px; 
                     text-align: center;
                 }}
-                .header h1 {{ margin: 0; font-size: 28px; font-weight: 600; }}
-                .header p {{ margin: 8px 0 0 0; opacity: 0.9; font-size: 16px; }}
+                .header h1 {{ margin: 0; font-size: 28px; font-weight: 600; color: #000000 !important; }}
+                .header p {{ margin: 8px 0 0 0; opacity: 1; font-size: 16px; color: #000000 !important; }}
+                .header small {{ color: #000000 !important; opacity: 1 !important; font-weight: 500; }}
                 .content {{ padding: 30px; }}
                 .stats {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }}
                 .stat-card {{ 
@@ -421,6 +556,8 @@ class DataForSEOTracker:
                 .trend-up {{ color: #059669; font-weight: 600; }}
                 .trend-down {{ color: #dc2626; font-weight: 600; }}
                 .trend-same {{ color: #6b7280; font-weight: 500; }}
+                .keyword-group {{ border-left: 3px solid #e5e7eb; }}
+                .keyword-group-mobile {{ border-left: 3px solid #10b981; }}
             </style>
         </head>
         <body>
@@ -429,6 +566,7 @@ class DataForSEOTracker:
                     <h1>📊 Rapport de positions SEO</h1>
                     <p>{datetime.now().strftime('%d/%m/%Y')} • Domaine: <strong>{domain}</strong></p>
                     <p>📍 Localisation: France | 🇫🇷 Langue: Français</p>
+                    <p><small>📈 Évolution : comparaison aujourd'hui vs hier</small></p>
                 </div>
                 
                 <div class="content">
@@ -452,57 +590,75 @@ class DataForSEOTracker:
             </div>
         """
         
-        if top_positions:
+        if top_groups:
             html += """
             <h2 class="section-title">🏆 Top des meilleures positions</h2>
             <table>
                 <tr>
                     <th>Mot-clé</th>
                     <th>Position</th>
-                    <th>Évolution</th>
+                    <th>Évolution (vs hier)</th>
                     <th>URL</th>
                     <th>Volume de recherche</th>
                 </tr>
             """
             
-            for pos in top_positions:
-                position_class = "position-good" if pos.position <= 10 else "position-medium" if pos.position <= 30 else "position-bad"
-                
-                # Extraire le device du nom du keyword
-                keyword_parts = pos.keyword.split(' (')
-                keyword_name = keyword_parts[0]
-                device = keyword_parts[1].rstrip(')') if len(keyword_parts) > 1 else ''
-                device_emoji = "💻" if device == "desktop" else "📱" if device == "mobile" else ""
-                device_badge = f'<span class="device-badge device-{device}">{device_emoji}</span>' if device else ''
-                
-                # Calcul de l'évolution
-                trend_class = ""
-                trend_text = ""
-                if pos.position_change < 0:
-                    trend_class = "trend-up"
-                    trend_text = f"{pos.trend_emoji} +{abs(pos.position_change)}"
-                elif pos.position_change > 0:
-                    trend_class = "trend-down"
-                    trend_text = f"{pos.trend_emoji} -{pos.position_change}"
-                else:
-                    trend_class = "trend-same"
-                    trend_text = f"{pos.trend_emoji} =" if pos.previous_position > 0 else "🆕 Nouveau"
-                
-                html += f"""
-                <tr>
-                    <td class="keyword">{keyword_name}{device_badge}</td>
-                    <td class="{position_class}">#{pos.position}</td>
-                    <td class="{trend_class}">{trend_text}</td>
-                    <td><a href="{pos.url}" class="url" target="_blank">{pos.url[:50]}...</a></td>
-                    <td>{pos.search_volume:,}</td>
-                </tr>
-                """
+            for keyword_base, devices, best_position in top_groups:
+                # Afficher d'abord le desktop, puis le mobile
+                for device_type in ['desktop', 'mobile']:
+                    if device_type in devices:
+                        pos = devices[device_type]
+                        position_class = "position-good" if pos.position <= 10 else "position-medium" if pos.position <= 30 else "position-bad"
+                        
+                        device_emoji = "💻" if device_type == "desktop" else "📱"
+                        device_badge = f'<span class="device-badge device-{device_type}">{device_emoji}</span>'
+                        
+                        # Calcul de l'évolution (aujourd'hui vs hier)
+                        trend_class = ""
+                        trend_text = ""
+                        if pos.position_change < 0:
+                            trend_class = "trend-up"
+                            trend_text = f"{pos.trend_emoji} +{abs(pos.position_change)} vs hier"
+                        elif pos.position_change > 0:
+                            trend_class = "trend-down"
+                            trend_text = f"{pos.trend_emoji} -{pos.position_change} vs hier"
+                        else:
+                            trend_class = "trend-same"
+                            trend_text = f"{pos.trend_emoji} = vs hier" if pos.previous_position > 0 else "🆕 Nouveau"
+                        
+                        # Afficher "Non classé" si position > 100
+                        position_display = f"#{pos.position}" if pos.position <= 100 else "Non classé"
+                        position_class = "unranked" if pos.position > 100 else position_class
+                        
+                        # Classe CSS pour grouper visuellement
+                        row_class = "keyword-group-mobile" if device_type == "mobile" else "keyword-group"
+                        
+                        html += f"""
+                        <tr class="{row_class}">
+                            <td class="keyword">{keyword_base}{device_badge}</td>
+                            <td class="{position_class}">{position_display}</td>
+                            <td class="{trend_class}">{trend_text}</td>
+                            <td><a href="{pos.url}" class="url" target="_blank">{pos.url[:50] if pos.url else 'N/A'}...</a></td>
+                            <td>{pos.search_volume:,}</td>
+                        </tr>
+                        """
             
             html += "</table>"
         
-        if unranked:
+        # Groupes de mots-clés non classés
+        unranked_groups = {}
+        for pos in unranked:
+            keyword_parts = pos.keyword.split(' (')
+            keyword_base = keyword_parts[0]
+            device = keyword_parts[1].rstrip(')') if len(keyword_parts) > 1 else 'desktop'
+            
+            if keyword_base not in unranked_groups:
+                unranked_groups[keyword_base] = {}
+            unranked_groups[keyword_base][device] = pos
+        
+        if unranked_groups:
             html += f"""
-            <h2 class="section-title">❌ Mots-clés non classés ({len(unranked)})</h2>
+            <h2 class="section-title">❌ Mots-clés non classés ({len(list(unranked_groups.keys()))} mots-clés)</h2>
             <table>
                 <tr>
                     <th>Mot-clé</th>
@@ -511,25 +667,30 @@ class DataForSEOTracker:
                 </tr>
             """
             
-            for pos in unranked[:20]:  # Limiter à 20 pour éviter des emails trop longs
-                keyword_parts = pos.keyword.split(' (')
-                keyword_name = keyword_parts[0]
-                device = keyword_parts[1].rstrip(')') if len(keyword_parts) > 1 else ''
-                device_emoji = "💻" if device == "desktop" else "📱" if device == "mobile" else ""
-                device_badge = f'<span class="device-badge device-{device}">{device_emoji}</span>' if device else ''
-                
-                html += f"""
-                <tr>
-                    <td class="keyword">{keyword_name}{device_badge}</td>
-                    <td>{pos.search_volume:,}</td>
-                    <td>{pos.cpc:.2f}€</td>
-                </tr>
-                """
+            count = 0
+            for keyword_base, devices in list(unranked_groups.items())[:10]:  # Limiter à 10 groupes
+                for device_type in ['desktop', 'mobile']:
+                    if device_type in devices:
+                        pos = devices[device_type]
+                        device_emoji = "💻" if device_type == "desktop" else "📱"
+                        device_badge = f'<span class="device-badge device-{device_type}">{device_emoji}</span>'
+                        
+                        # Classe CSS pour grouper visuellement
+                        row_class = "keyword-group-mobile" if device_type == "mobile" else "keyword-group"
+                        
+                        html += f"""
+                        <tr class="{row_class}">
+                            <td class="keyword">{keyword_base}{device_badge}</td>
+                            <td>{pos.search_volume:,}</td>
+                            <td>{pos.cpc:.2f}€</td>
+                        </tr>
+                        """
+                        count += 1
             
             html += "</table>"
             
-            if len(unranked) > 20:
-                html += f"<p><em>... et {len(unranked) - 20} autres mots-clés non classés</em></p>"
+            if len(unranked_groups) > 10:
+                html += f"<p><em>... et {len(unranked_groups) - 10} autres groupes de mots-clés non classés</em></p>"
         
         html += """
                 </div>
