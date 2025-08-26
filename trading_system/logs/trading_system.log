@@ -1,0 +1,82 @@
+2025-08-26 15:53:59,207 - __main__ - INFO - Logging configured successfully
+2025-08-26 15:53:59,207 - __main__ - INFO - === TipRanks Trading System Started ===
+2025-08-26 15:53:59,207 - __main__ - INFO - Initializing database: sqlite:///./trading_data.db
+2025-08-26 15:53:59,379 - __main__ - ERROR - Failed to initialize database: Textual SQL expression 'SELECT 1' should be explicitly declared as text('SELECT 1')
+2025-08-26 15:54:09,925 - __main__ - INFO - Logging configured successfully
+2025-08-26 15:54:09,925 - __main__ - INFO - === TipRanks Trading System Started ===
+2025-08-26 15:54:09,925 - __main__ - INFO - Initializing database: sqlite:///./trading_data.db
+2025-08-26 15:54:09,937 - __main__ - INFO - Database initialized successfully
+2025-08-26 15:54:09,937 - __main__ - INFO - Initializing API clients...
+2025-08-26 15:54:09,937 - __main__ - INFO - Email notifications enabled
+2025-08-26 15:54:09,937 - __main__ - INFO - API clients initialized successfully
+2025-08-26 15:54:09,956 - __main__ - INFO - === TipRanks Trading System Finished ===
+2025-08-26 16:00:22,205 - __main__ - INFO - Logging configured successfully
+2025-08-26 16:00:22,205 - __main__ - INFO - === TipRanks Trading System Started ===
+2025-08-26 16:00:22,206 - __main__ - INFO - Initializing database: sqlite:///./trading_data.db
+2025-08-26 16:00:22,220 - __main__ - INFO - Database initialized successfully
+2025-08-26 16:00:22,220 - __main__ - INFO - Initializing API clients...
+2025-08-26 16:00:22,220 - __main__ - INFO - Email notifications enabled
+2025-08-26 16:00:22,220 - __main__ - INFO - API clients initialized successfully
+2025-08-26 16:00:22,253 - __main__ - INFO - === TipRanks Trading System Finished ===
+2025-08-26 16:00:28,387 - __main__ - INFO - Logging configured successfully
+2025-08-26 16:00:28,387 - __main__ - INFO - === TipRanks Trading System Started ===
+2025-08-26 16:00:28,387 - __main__ - INFO - Initializing database: sqlite:///./trading_data.db
+2025-08-26 16:00:28,399 - __main__ - INFO - Database initialized successfully
+2025-08-26 16:00:28,399 - __main__ - INFO - Initializing API clients...
+2025-08-26 16:00:28,399 - __main__ - INFO - Email notifications enabled
+2025-08-26 16:00:28,399 - __main__ - INFO - API clients initialized successfully
+2025-08-26 16:00:28,402 - __main__ - INFO - Starting data collection for 6 tickers
+2025-08-26 16:00:28,402 - src.services.data_collector - INFO - Collecting data for AAPL
+2025-08-26 16:00:28,546 - src.api.alpha_vantage_client - INFO - Rate limiting: sleeping 11.87 seconds
+2025-08-26 16:00:40,524 - src.services.data_collector - ERROR - Error collecting price data for AAPL: minute must be in 0..59
+2025-08-26 16:00:40,623 - src.api.tipranks_client - ERROR - Error getting price targets for AAPL: 404 Client Error: Not Found for url: https://www.tipranks.com/api/stocks/getPriceTargets/?name=AAPL
+2025-08-26 16:00:40,691 - src.api.tipranks_client - ERROR - Error getting sentiment for AAPL: 404 Client Error: Not Found for url: https://www.tipranks.com/api/stocks/getNewsSentimentData/?name=AAPL
+2025-08-26 16:00:40,938 - src.services.data_collector - WARNING - Partial data collection failure for AAPL
+2025-08-26 16:00:40,938 - src.services.data_collector - INFO - Collecting data for MSFT
+2025-08-26 16:00:40,938 - src.api.alpha_vantage_client - INFO - Rate limiting: sleeping 11.48 seconds
+2025-08-26 16:00:52,521 - src.api.alpha_vantage_client - INFO - Rate limiting: sleeping 11.90 seconds
+2025-08-26 16:01:04,527 - src.services.data_collector - ERROR - Error collecting price data for MSFT: minute must be in 0..59
+2025-08-26 16:01:04,600 - src.api.tipranks_client - ERROR - Error getting price targets for MSFT: 404 Client Error: Not Found for url: https://www.tipranks.com/api/stocks/getPriceTargets/?name=MSFT
+2025-08-26 16:01:04,662 - src.api.tipranks_client - ERROR - Error getting sentiment for MSFT: 404 Client Error: Not Found for url: https://www.tipranks.com/api/stocks/getNewsSentimentData/?name=MSFT
+2025-08-26 16:01:04,941 - src.services.data_collector - WARNING - Partial data collection failure for MSFT
+2025-08-26 16:01:04,941 - src.services.data_collector - INFO - Collecting data for GOOGL
+2025-08-26 16:01:04,942 - src.api.alpha_vantage_client - INFO - Rate limiting: sleeping 11.48 seconds
+2025-08-26 16:01:16,516 - src.api.alpha_vantage_client - INFO - Rate limiting: sleeping 11.90 seconds
+2025-08-26 16:01:28,591 - src.services.data_collector - ERROR - Error collecting price data for GOOGL: minute must be in 0..59
+2025-08-26 16:01:28,697 - src.api.tipranks_client - ERROR - Error getting price targets for GOOGL: 404 Client Error: Not Found for url: https://www.tipranks.com/api/stocks/getPriceTargets/?name=GOOGL
+2025-08-26 16:01:28,756 - src.api.tipranks_client - ERROR - Error getting sentiment for GOOGL: 404 Client Error: Not Found for url: https://www.tipranks.com/api/stocks/getNewsSentimentData/?name=GOOGL
+2025-08-26 16:01:29,215 - src.services.data_collector - WARNING - Partial data collection failure for GOOGL
+2025-08-26 16:01:29,215 - src.services.data_collector - INFO - Collecting data for TSLA
+2025-08-26 16:01:29,216 - src.api.alpha_vantage_client - INFO - Rate limiting: sleeping 11.20 seconds
+2025-08-26 16:01:40,518 - src.api.alpha_vantage_client - INFO - Rate limiting: sleeping 11.90 seconds
+2025-08-26 16:01:52,528 - src.services.data_collector - ERROR - Error collecting price data for TSLA: minute must be in 0..59
+2025-08-26 16:01:52,588 - src.api.tipranks_client - ERROR - Error getting price targets for TSLA: 404 Client Error: Not Found for url: https://www.tipranks.com/api/stocks/getPriceTargets/?name=TSLA
+2025-08-26 16:01:52,675 - src.api.tipranks_client - ERROR - Error getting sentiment for TSLA: 404 Client Error: Not Found for url: https://www.tipranks.com/api/stocks/getNewsSentimentData/?name=TSLA
+2025-08-26 16:01:52,915 - src.services.data_collector - WARNING - Partial data collection failure for TSLA
+2025-08-26 16:01:52,916 - src.services.data_collector - INFO - Collecting data for NVDA
+2025-08-26 16:01:52,916 - src.api.alpha_vantage_client - INFO - Rate limiting: sleeping 11.51 seconds
+2025-08-26 16:02:04,528 - src.api.alpha_vantage_client - INFO - Rate limiting: sleeping 11.89 seconds
+2025-08-26 16:02:16,959 - src.services.data_collector - ERROR - Error collecting price data for NVDA: minute must be in 0..59
+2025-08-26 16:02:17,015 - src.api.tipranks_client - ERROR - Error getting price targets for NVDA: 404 Client Error: Not Found for url: https://www.tipranks.com/api/stocks/getPriceTargets/?name=NVDA
+2025-08-26 16:02:17,070 - src.api.tipranks_client - ERROR - Error getting sentiment for NVDA: 404 Client Error: Not Found for url: https://www.tipranks.com/api/stocks/getNewsSentimentData/?name=NVDA
+2025-08-26 16:02:17,267 - src.services.data_collector - WARNING - Partial data collection failure for NVDA
+2025-08-26 16:02:17,267 - src.services.data_collector - INFO - Collecting data for AMZN
+2025-08-26 16:02:17,268 - src.api.alpha_vantage_client - INFO - Rate limiting: sleeping 11.15 seconds
+2025-08-26 16:11:53,225 - __main__ - INFO - Logging configured successfully
+2025-08-26 16:11:53,225 - __main__ - INFO - === TipRanks Trading System Started ===
+2025-08-26 16:11:53,225 - __main__ - INFO - Initializing database: sqlite:///./trading_data.db
+2025-08-26 16:11:53,238 - __main__ - INFO - Database initialized successfully
+2025-08-26 16:11:53,238 - __main__ - INFO - Initializing API clients...
+2025-08-26 16:11:53,238 - __main__ - INFO - Email notifications enabled
+2025-08-26 16:11:53,238 - __main__ - INFO - API clients initialized successfully
+2025-08-26 16:11:53,769 - src.services.notification_service - ERROR - Error sending email: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-3c711211cc8sm16762693f8f.36 - gsmtp')
+2025-08-26 16:11:53,770 - __main__ - INFO - === TipRanks Trading System Finished ===
+2025-08-26 16:18:30,529 - __main__ - INFO - Logging configured successfully
+2025-08-26 16:18:30,531 - __main__ - INFO - === TipRanks Trading System Started ===
+2025-08-26 16:18:30,531 - __main__ - INFO - Initializing database: sqlite:///./trading_data.db
+2025-08-26 16:18:30,547 - __main__ - INFO - Database initialized successfully
+2025-08-26 16:18:30,547 - __main__ - INFO - Initializing API clients...
+2025-08-26 16:18:30,547 - __main__ - INFO - Email notifications enabled
+2025-08-26 16:18:30,547 - __main__ - INFO - API clients initialized successfully
+2025-08-26 16:18:31,240 - src.services.notification_service - INFO - Email alert sent for BUY signal on AAPL
+2025-08-26 16:18:31,240 - __main__ - INFO - === TipRanks Trading System Finished ===
