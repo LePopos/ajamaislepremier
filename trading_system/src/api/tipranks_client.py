@@ -149,17 +149,55 @@ class TipRanksClient:
             logger.error(f"Error getting trending stocks: {e}")
             return []
     
+    def get_analyst_recommendations(self, ticker: str) -> Dict[str, Any]:
+        """Get analyst recommendations distribution (buy/hold/sell)"""
+        try:
+            url = f"{self.base_url}/getData/"
+            params = {'name': ticker.upper()}
+            
+            response = self.session.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            
+            data = response.json()
+            
+            if not data:
+                logger.warning(f"No recommendations data for {ticker}")
+                return {}
+            
+            # Extract recommendations data
+            recommendations = data.get('analystConsensus', {})
+            distribution = recommendations.get('distribution', {})
+            
+            return {
+                'ticker': ticker.upper(),
+                'total_analysts': recommendations.get('nAnalysts', 0),
+                'buy_count': distribution.get('buy', 0),
+                'hold_count': distribution.get('hold', 0),
+                'sell_count': distribution.get('sell', 0),
+                'consensus': recommendations.get('consensus', ''),
+                'buy_percentage': round((distribution.get('buy', 0) / max(recommendations.get('nAnalysts', 1), 1)) * 100, 1),
+                'hold_percentage': round((distribution.get('hold', 0) / max(recommendations.get('nAnalysts', 1), 1)) * 100, 1),
+                'sell_percentage': round((distribution.get('sell', 0) / max(recommendations.get('nAnalysts', 1), 1)) * 100, 1),
+                'timestamp': datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting analyst recommendations for {ticker}: {e}")
+            return {}
+    
     def get_comprehensive_data(self, ticker: str) -> Dict[str, Any]:
         """Get all available data for a ticker in one call"""
         price_targets = self.get_price_targets(ticker)
         sentiment = self.get_news_sentiment(ticker)
         smart_score = self.get_smart_score(ticker)
+        recommendations = self.get_analyst_recommendations(ticker)
         
         return {
             'ticker': ticker.upper(),
             'price_targets': price_targets,
             'sentiment': sentiment,
             'smart_score': smart_score,
+            'recommendations': recommendations,
             'timestamp': datetime.now().isoformat()
         }
     
