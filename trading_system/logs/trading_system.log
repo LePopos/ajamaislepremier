@@ -80,3 +80,12 @@
 2025-08-26 16:18:30,547 - __main__ - INFO - API clients initialized successfully
 2025-08-26 16:18:31,240 - src.services.notification_service - INFO - Email alert sent for BUY signal on AAPL
 2025-08-26 16:18:31,240 - __main__ - INFO - === TipRanks Trading System Finished ===
+2025-08-26 19:12:52,596 - __main__ - INFO - Logging configured successfully
+2025-08-26 19:12:52,596 - __main__ - INFO - === TipRanks Trading System Started ===
+2025-08-26 19:12:52,596 - __main__ - INFO - Initializing database: sqlite:///./trading_data.db
+2025-08-26 19:12:52,800 - __main__ - INFO - Database initialized successfully
+2025-08-26 19:12:52,800 - __main__ - INFO - Initializing API clients...
+2025-08-26 19:12:52,801 - __main__ - INFO - Email notifications enabled
+2025-08-26 19:12:52,801 - __main__ - INFO - API clients initialized successfully
+2025-08-26 19:12:52,999 - src.services.notification_service - ERROR - Error sending signal alert: unsupported operand type(s) for /: 'NoneType' and 'float'
+2025-08-26 19:12:52,999 - __main__ - INFO - === TipRanks Trading System Finished ===
