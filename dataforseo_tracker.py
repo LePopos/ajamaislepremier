@@ -21,6 +21,16 @@ import time
 import requests
 from requests.auth import HTTPBasicAuth
 
+# Import TipRanks client for stock recommendations
+try:
+    import sys
+    sys.path.append('trading_system/src')
+    from api.tipranks_client import TipRanksClient
+    TIPRANKS_AVAILABLE = True
+except ImportError:
+    TIPRANKS_AVAILABLE = False
+    print("⚠️ TipRanks client not available - stock recommendations will be skipped")
+
 
 @dataclass
 class KeywordPosition:
@@ -35,6 +45,9 @@ class KeywordPosition:
     language: str
     date: str
     previous_position: int = 0
+    
+    # TipRanks stock data (if keyword matches a stock ticker)
+    stock_recommendations: Optional[Dict] = None
     
     @property
     def position_change(self) -> int:
@@ -63,6 +76,9 @@ class DataForSEOTracker:
         self.base_url = "https://api.dataforseo.com/v3"
         self.session = requests.Session()
         self.session.auth = HTTPBasicAuth(self.api_login, self.api_password)
+        
+        # Initialize TipRanks client if available
+        self.tipranks_client = TipRanksClient() if TIPRANKS_AVAILABLE else None
     
     def load_config(self, config_file: str) -> Dict:
         """Charge la configuration depuis le fichier JSON"""
@@ -114,6 +130,30 @@ class DataForSEOTracker:
         with open(config_file, 'w', encoding='utf-8') as f:
             json.dump(default_config, f, indent=4, ensure_ascii=False)
     
+    def is_stock_ticker(self, keyword: str) -> bool:
+        """Détermine si un mot-clé pourrait être un ticker d'action"""
+        # Nettoyer le keyword (enlever device info)
+        clean_keyword = keyword.split(' (')[0].strip()
+        
+        # Critères basiques pour détecter un ticker
+        return (
+            len(clean_keyword) <= 5 and  # Les tickers US font généralement 1-5 caractères
+            clean_keyword.isupper() and  # Les tickers sont en majuscules
+            clean_keyword.isalpha() and  # Seulement des lettres
+            not any(word in clean_keyword.lower() for word in ['le', 'la', 'les', 'un', 'une', 'des'])  # Pas de mots français courants
+        )
+    
+    def get_stock_recommendations(self, ticker: str) -> Optional[Dict]:
+        """Récupère les recommandations TipRanks pour un ticker"""
+        if not self.tipranks_client:
+            return None
+        
+        try:
+            return self.tipranks_client.get_analyst_recommendations(ticker)
+        except Exception as e:
+            print(f"  ⚠️ Erreur récupération TipRanks pour {ticker}: {e}")
+            return None
+    
     def get_serp_results(self, keyword: str, tracking_config: Dict) -> Optional[Dict]:
         """Récupère les résultats SERP pour un mot-clé"""
         endpoint = f"{self.base_url}/serp/google/organic/live/advanced"
@@ -147,6 +187,13 @@ class DataForSEOTracker:
             return None
         
         domain_clean = domain.replace('www.', '').lower()
+        keyword = serp_data.get('keyword', '')
+        
+        # Vérifier si le mot-clé est un ticker d'action et récupérer les données TipRanks
+        stock_recommendations = None
+        if self.is_stock_ticker(keyword):
+            print(f"  📈 Détection ticker: {keyword} - Récupération données TipRanks...")
+            stock_recommendations = self.get_stock_recommendations(keyword)
         
         for item in serp_data['items']:
             if item['type'] == 'organic':
@@ -154,7 +201,7 @@ class DataForSEOTracker:
                 
                 if domain_clean == result_domain:
                     return KeywordPosition(
-                        keyword=serp_data.get('keyword', ''),
+                        keyword=keyword,
                         domain=domain,
                         position=item.get('rank_group', 0),
                         url=item.get('url', ''),
@@ -163,12 +210,13 @@ class DataForSEOTracker:
                         competition=serp_data.get('competition', 0.0),
                         location=serp_data.get('location_name', ''),
                         language=serp_data.get('language_name', ''),
-                        date=datetime.now().strftime('%Y-%m-%d')
+                        date=datetime.now().strftime('%Y-%m-%d'),
+                        stock_recommendations=stock_recommendations
                     )
         
         # Si le domaine n'est pas trouvé dans les 100 premiers résultats
         return KeywordPosition(
-            keyword=serp_data.get('keyword', ''),
+            keyword=keyword,
             domain=domain,
             position=999,  # Position "non classé"
             url='',
@@ -177,7 +225,8 @@ class DataForSEOTracker:
             competition=serp_data.get('competition', 0.0),
             location=serp_data.get('location_name', ''),
             language=serp_data.get('language_name', ''),
-            date=datetime.now().strftime('%Y-%m-%d')
+            date=datetime.now().strftime('%Y-%m-%d'),
+            stock_recommendations=stock_recommendations
         )
     
     def track_keywords(self) -> List[KeywordPosition]:
@@ -298,12 +347,13 @@ class DataForSEOTracker:
         
         with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
             fieldnames = ['date', 'keyword', 'domain', 'position', 'url', 
-                         'search_volume', 'cpc', 'competition', 'location', 'language']
+                         'search_volume', 'cpc', 'competition', 'location', 'language',
+                         'is_stock', 'buy_count', 'hold_count', 'sell_count', 'consensus']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             
             writer.writeheader()
             for pos in positions:
-                writer.writerow({
+                row_data = {
                     'date': pos.date,
                     'keyword': pos.keyword,
                     'domain': pos.domain,
@@ -313,8 +363,14 @@ class DataForSEOTracker:
                     'cpc': pos.cpc,
                     'competition': pos.competition,
                     'location': pos.location,
-                    'language': pos.language
-                })
+                    'language': pos.language,
+                    'is_stock': bool(pos.stock_recommendations),
+                    'buy_count': pos.stock_recommendations.get('buy_count', '') if pos.stock_recommendations else '',
+                    'hold_count': pos.stock_recommendations.get('hold_count', '') if pos.stock_recommendations else '',
+                    'sell_count': pos.stock_recommendations.get('sell_count', '') if pos.stock_recommendations else '',
+                    'consensus': pos.stock_recommendations.get('consensus', '') if pos.stock_recommendations else ''
+                }
+                writer.writerow(row_data)
         
         return filename
     
@@ -691,6 +747,62 @@ class DataForSEOTracker:
             
             if len(unranked_groups) > 10:
                 html += f"<p><em>... et {len(unranked_groups) - 10} autres groupes de mots-clés non classés</em></p>"
+        
+        # Section pour les actions avec données TipRanks
+        stock_positions = [pos for pos in positions if pos.stock_recommendations]
+        if stock_positions:
+            html += f"""
+            <h2 class="section-title">📈 Recommandations actions (TipRanks)</h2>
+            <table>
+                <tr>
+                    <th>Action</th>
+                    <th>Position SEO</th>
+                    <th>Consensus</th>
+                    <th>Buy</th>
+                    <th>Hold</th>
+                    <th>Sell</th>
+                    <th>Total analystes</th>
+                </tr>
+            """
+            
+            for pos in stock_positions:
+                if pos.stock_recommendations:
+                    reco = pos.stock_recommendations
+                    keyword_base = pos.keyword.split(' (')[0]  # Enlever device info
+                    
+                    # Position SEO
+                    position_display = f"#{pos.position}" if pos.position <= 100 else "Non classé"
+                    position_class = "position-good" if pos.position <= 10 else "position-medium" if pos.position <= 30 else "position-bad"
+                    if pos.position > 100:
+                        position_class = "unranked"
+                    
+                    # Couleur du consensus
+                    consensus = reco.get('consensus', 'N/A')
+                    consensus_class = "trend-up" if 'buy' in consensus.lower() else "trend-same" if 'hold' in consensus.lower() else "trend-down"
+                    
+                    # Comptes et pourcentages
+                    buy_count = reco.get('buy_count', 0)
+                    hold_count = reco.get('hold_count', 0)
+                    sell_count = reco.get('sell_count', 0)
+                    total_analysts = reco.get('total_analysts', 0)
+                    
+                    buy_pct = reco.get('buy_percentage', 0)
+                    hold_pct = reco.get('hold_percentage', 0) 
+                    sell_pct = reco.get('sell_percentage', 0)
+                    
+                    html += f"""
+                    <tr>
+                        <td class="keyword"><strong>{keyword_base}</strong></td>
+                        <td class="{position_class}">{position_display}</td>
+                        <td class="{consensus_class}"><strong>{consensus}</strong></td>
+                        <td style="color: #059669;">{buy_count} ({buy_pct}%)</td>
+                        <td style="color: #d97706;">{hold_count} ({hold_pct}%)</td>
+                        <td style="color: #dc2626;">{sell_count} ({sell_pct}%)</td>
+                        <td>{total_analysts}</td>
+                    </tr>
+                    """
+            
+            html += "</table>"
         
         html += """
                 </div>
