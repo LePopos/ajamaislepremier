@@ -21,21 +21,23 @@ sed -i '/trading_monitor.py\|dataforseo_tracker.py/d' "$CRON_FILE"
 cat >> "$CRON_FILE" << EOF
 
 # === Trading Monitor - Système automatisé ===
-# 09h00 : Rapport quotidien complet (pré-ouverture EU)
-0 9 * * * cd $SCRIPT_DIR && python3 trading_monitor.py --report-now >> logs/cron.log 2>&1
+# SEULEMENT LES JOURS DE SEMAINE (lun-ven) quand la bourse US est ouverte
 
-# 15h30 : Check ouverture NYSE (9h30 EST)
-30 15 * * * cd $SCRIPT_DIR && python3 trading_monitor.py --check-now >> logs/cron.log 2>&1
+# 09h00 : Rapport quotidien complet (pré-ouverture EU)
+0 9 * * 1-5 cd $SCRIPT_DIR && python3 trading_monitor.py --report-now >> logs/cron.log 2>&1
+
+# 15h30 : Check ouverture NYSE (9h30 EST)  
+30 15 * * 1-5 cd $SCRIPT_DIR && python3 trading_monitor.py --check-now >> logs/cron.log 2>&1
 
 # 18h00 : Check mi-session US
-0 18 * * * cd $SCRIPT_DIR && python3 trading_monitor.py --check-now >> logs/cron.log 2>&1
+0 18 * * 1-5 cd $SCRIPT_DIR && python3 trading_monitor.py --check-now >> logs/cron.log 2>&1
 
 # 22h00 : Check post-clôture US (16h EST)
-0 22 * * * cd $SCRIPT_DIR && python3 trading_monitor.py --check-now >> logs/cron.log 2>&1
+0 22 * * 1-5 cd $SCRIPT_DIR && python3 trading_monitor.py --check-now >> logs/cron.log 2>&1
 
-# Vérifications pendant les heures de trading US (16h-21h)
-0 16,17,19,20,21 * * * cd $SCRIPT_DIR && python3 trading_monitor.py --check-now >> logs/cron.log 2>&1
-30 16,17,19,20,21 * * * cd $SCRIPT_DIR && python3 trading_monitor.py --check-now >> logs/cron.log 2>&1
+# Vérifications pendant les heures de trading US (16h-21h) - SEULEMENT SEMAINE
+0 16,17,19,20,21 * * 1-5 cd $SCRIPT_DIR && python3 trading_monitor.py --check-now >> logs/cron.log 2>&1
+30 16,17,19,20,21 * * 1-5 cd $SCRIPT_DIR && python3 trading_monitor.py --check-now >> logs/cron.log 2>&1
 
 EOF
 
@@ -50,12 +52,14 @@ mkdir -p "$SCRIPT_DIR/logs"
 
 echo "✅ Tâches cron configurées !"
 echo ""
-echo "📅 Planning configuré:"
+echo "📅 Planning configuré (LUNDI-VENDREDI uniquement):"
 echo "   • 09h00 : Rapport quotidien complet"
 echo "   • 15h30 : Check ouverture NYSE"
 echo "   • 18h00 : Check mi-session"
 echo "   • 22h00 : Check post-clôture"
 echo "   • 16h-21h : Checks toutes les 30min"
+echo ""
+echo "🚫 Weekends et jours fériés US = PAS d'exécution"
 echo ""
 echo "📝 Logs: $SCRIPT_DIR/logs/cron.log"
 echo ""

@@ -281,6 +281,10 @@ class TradingMonitor:
     
     def run_quick_check(self):
         """Vérification rapide et alertes"""
+        if not self.is_market_day():
+            logger.info("📅 Marché fermé - vérification rapide ignorée")
+            return
+            
         logger.info("🔍 Vérification rapide des changements")
         try:
             changes = self.check_recommendation_changes()
@@ -332,10 +336,44 @@ class TradingMonitor:
     
     def _conditional_check(self):
         """Vérification conditionnelle pendant les heures de trading"""
+        if not self.is_market_day():
+            logger.info("📅 Marché fermé aujourd'hui - vérification ignorée")
+            return
+            
         current_hour = datetime.now().hour
         # Seulement pendant les heures de trading US (15h30-22h heure française)
         if 15 <= current_hour <= 22:
             self.run_quick_check()
+    
+    def is_market_day(self) -> bool:
+        """Vérifie si c'est un jour où la bourse US est ouverte"""
+        today = datetime.now()
+        
+        # Weekend = pas de bourse
+        if today.weekday() >= 5:  # 5=samedi, 6=dimanche
+            return False
+        
+        # Jours fériés US principaux (approximatifs)
+        year = today.year
+        month = today.month
+        day = today.day
+        
+        # Liste des jours fériés fixes et approximatifs
+        holidays = [
+            (1, 1),    # New Year's Day
+            (7, 4),    # Independence Day  
+            (12, 25),  # Christmas Day
+            # Memorial Day: dernier lundi de mai (approximatif)
+            # Labor Day: premier lundi de septembre (approximatif)
+            # Thanksgiving: 4e jeudi de novembre (approximatif)
+        ]
+        
+        if (month, day) in holidays:
+            return False
+            
+        # Good Friday et autres peuvent être ajoutés ici
+        
+        return True
     
     def _run_scheduler(self):
         """Exécute le scheduler en boucle"""
