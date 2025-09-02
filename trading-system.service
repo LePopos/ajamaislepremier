@@ -1,0 +1,25 @@
+[Unit]
+Description=Trading System Service
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=codespace
+WorkingDirectory=/workspaces/ajamaislepremier
+ExecStart=/workspaces/ajamaislepremier/start_trading_loop.sh
+Restart=always
+RestartSec=10
+StandardOutput=append:/workspaces/ajamaislepremier/trading_system_service.log
+StandardError=append:/workspaces/ajamaislepremier/trading_system_service.log
+
+# Variables d'environnement
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+Environment=PYTHONPATH=/workspaces/ajamaislepremier/trading_system
+
+# Gestion robuste des redémarrages
+StartLimitInterval=300
+StartLimitBurst=5
+
+[Install]
+WantedBy=multi-user.target

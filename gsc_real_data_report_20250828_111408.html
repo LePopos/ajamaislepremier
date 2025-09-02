@@ -1,0 +1,450 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Rapport GSC Réel - Top 25 Hausses</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { background: #1976d2; color: white; padding: 20px; border-radius: 8px; }
+        .summary { background: #f5f5f5; padding: 15px; margin: 20px 0; border-radius: 8px; }
+        .positive { color: #4caf50; font-weight: bold; }
+        .negative { color: #f44336; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f5f5f5; font-size: 0.85em; }
+        .url { font-size: 0.9em; max-width: 300px; word-break: break-all; }
+        .metric { text-align: center; font-weight: bold; font-size: 0.9em; }
+        .category-analysis { margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Rapport GSC avec Données Réelles</h1>
+        <h2>Top 25 Hausses</h2>
+        <p>Site: https://www.legrand.fr</p>
+        <p><strong>Périodes:</strong> 2025-08-20 → 2025-08-26 vs 2025-08-13 → 2025-08-19</p>
+    </div>
+
+    <div class="summary">
+        <h2>📈 Résumé des 25 URLs</h2>
+        <ul>
+            <li><strong>Total clics actuels:</strong> 18,840</li>
+            <li><strong>Total clics précédents:</strong> 15,324</li>
+            <li><strong>Variation clics:</strong> <span class="positive">+22.9%</span></li>
+            <li><strong>Variation impressions:</strong> <span class="positive">+17.4%</span></li>
+            <li><strong>Anomalies détectées:</strong> 0 critiques, 1 modérées</li>
+        </ul>
+    </div>
+
+    <div class="anomalies">
+        <h2>🔍 Anomalies Détectées</h2>
+        
+            <div class="alert-medium">
+                <strong>👁️ VISIBILITÉ SANS IMPACT - MEDIUM</strong><br>
+                Forte hausse impressions (+11,671) mais peu de clics (+73)<br>
+                <small class="url">https://www.legrand.fr/catalogue/interrupteurs-et-prises</small>
+            </div>
+            
+    </div>
+
+    <div class="insights">
+        <h2>💡 Insights & Recommandations</h2>
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <p style='margin: 10px 0; line-height: 1.6;'>🏆 **Champion de la semaine** : +590 clics sur la page Norme NF-C 15-100. Cette norme électrique est clairement un sujet d'actualité.</p><p style='margin: 10px 0; line-height: 1.6;'>📚 **Catégorie gagnante** : FAQ avec +1,632 clics. Les utilisateurs cherchent activement ces informations.</p><p style='margin: 10px 0; line-height: 1.6;'>❓ **Boom des FAQ** : +1,632 clics sur les questions fréquentes. Les utilisateurs ont besoin d'aide technique.</p><p style='margin: 10px 0; line-height: 1.6;'>🔧 **Segment Pro en croissance** : +988 clics. Le marché professionnel est dynamique.</p><p style='margin: 10px 0; line-height: 1.6;'>💎 **Opportunité SEO** : 3 pages avec forte visibilité mais peu de clics. Optimiser les titres/descriptions.</p><p style='margin: 10px 0; line-height: 1.6;'>🌡️ **Effet saison** : +205 clics sur contenus saisonniers. Période favorable pour ces sujets.</p><p style='margin: 10px 0; line-height: 1.6;'>🎯 **CTR amélioré** : +4.7% (3.27% → 3.43%). La pertinence du contenu augmente.</p><p style='margin: 10px 0; line-height: 1.6;'>🚀 **Action recommandée** : Capitaliser sur les pages en croissance en créant du contenu connexe et en optimisant le maillage interne.</p><p style='margin: 10px 0; line-height: 1.6;'>📋 **Trend détecté** : Les normes électriques intéressent beaucoup. Créer plus de contenu réglementaire.</p>
+        </div>
+    </div>
+
+    <div class="executive-summary">
+        <h2>📋 Récap Exécutif</h2>
+        <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4caf50;">
+            <h3>🎯 En bref :</h3>
+            <ul style="margin: 10px 0; line-height: 1.8;">
+                <li><strong>Volume :</strong> {total_clicks_current:,} clics vs {total_clicks_previous:,} précédents ({clicks_variation:+.1f}%)</li>
+                <li><strong>Efficacité :</strong> CTR moyen de {((total_clicks_current / total_impressions_current) * 100):.2f}%</li>
+                <li><strong>Impact :</strong> {len([row for row in data if abs(row['clicks_diff']) > 100])} pages avec impact > 100 clics</li>
+                <li><strong>Alertes :</strong> {len([a for a in anomalies if a['severity'] == 'HIGH'])} critiques, {len([a for a in anomalies if a['severity'] == 'MEDIUM'])} modérées</li>
+            </ul>
+            <p style="margin-top: 15px;"><strong>🚀 Next steps :</strong> {'Capitaliser sur la croissance et dupliquer les succès' if report_type == 'hausses' else 'Investiguer les baisses anormales et corriger les problèmes techniques'}</p>
+        </div>
+    </div>
+
+    <div class="data-table">
+        <h2>🚀 {title}</h2>
+        <table>
+            <tr>
+                <th>URL</th>
+                <th>Catégorie</th>
+                <th>Clics<br>7 derniers jours</th>
+                <th>Clics<br>7 jours précédents</th>
+                <th>Clics<br>Différence</th>
+                <th>Impressions<br>7 derniers jours</th>
+                <th>Impressions<br>7 jours précédents</th>
+                <th>Impressions<br>Différence</th>
+                <th>CTR Actuel</th>
+            </tr>
+    
+            <tr>
+                <td class="url">https://www.legrand.fr/pro/normes-et-reglementations/norme-nf-c-15-100/norme-nf-c-15-100-suivez-le-guide</td>
+                <td>Professional</td>
+                <td class="metric">3,059</td>
+                <td class="metric">2,469</td>
+                <td class="metric positive">+590</td>
+                <td class="metric">123,367</td>
+                <td class="metric">98,425</td>
+                <td class="metric positive">+24,942</td>
+                <td class="metric">2.5%</td>
+            </tr>
+        
+            <tr>
+                <td class="url">https://www.legrand.fr/</td>
+                <td>Homepage</td>
+                <td class="metric">2,640</td>
+                <td class="metric">2,152</td>
+                <td class="metric positive">+488</td>
+                <td class="metric">70,194</td>
+                <td class="metric">67,231</td>
+                <td class="metric positive">+2,963</td>
+                <td class="metric">3.8%</td>
+            </tr>
+        
+            <tr>
+                <td class="url">https://www.legrand.fr/questions-frequentes/que-doit-on-brancher-sur-un-interrupteur-differentiel-de-type-a</td>
+                <td>FAQ</td>
+                <td class="metric">1,379</td>
+                <td class="metric">1,085</td>
+                <td class="metric positive">+294</td>
+                <td class="metric">13,676</td>
+                <td class="metric">12,175</td>
+                <td class="metric positive">+1,501</td>
+                <td class="metric">10.1%</td>
+            </tr>
+        
+            <tr>
+                <td class="url">https://www.legrand.fr/pro/normes-et-reglementations/eclairage-de-securite/normes-et-eclairage-de-securite-et-baes-ce-quil-faut-savoir</td>
+                <td>Professional</td>
+                <td class="metric">770</td>
+                <td class="metric">520</td>
+                <td class="metric positive">+250</td>
+                <td class="metric">17,626</td>
+                <td class="metric">14,288</td>
+                <td class="metric positive">+3,338</td>
+                <td class="metric">4.4%</td>
+            </tr>
+        
+            <tr>
+                <td class="url">https://www.legrand.fr/questions-frequentes/quelle-difference-entre-interrupteur-differentiel-et-disjoncteur-differentiel</td>
+                <td>FAQ</td>
+                <td class="metric">878</td>
+                <td class="metric">712</td>
+                <td class="metric positive">+166</td>
+                <td class="metric">18,099</td>
+                <td class="metric">16,960</td>
+                <td class="metric positive">+1,139</td>
+                <td class="metric">4.9%</td>
+            </tr>
+        
+            <tr>
+                <td class="url">https://www.legrand.fr/questions-frequentes/quel-interrupteur-differentiel-choisir-pour-son-tableau-electrique</td>
+                <td>FAQ</td>
+                <td class="metric">622</td>
+                <td class="metric">492</td>
+                <td class="metric positive">+130</td>
+                <td class="metric">9,783</td>
+                <td class="metric">8,159</td>
+                <td class="metric positive">+1,624</td>
+                <td class="metric">6.4%</td>
+            </tr>
+        
+            <tr>
+                <td class="url">https://www.legrand.fr/questions-frequentes/comment-cabler-un-interrupteur-va-et-vient</td>
+                <td>FAQ</td>
+                <td class="metric">483</td>
+                <td class="metric">365</td>
+                <td class="metric positive">+118</td>
+                <td class="metric">24,826</td>
+                <td class="metric">18,423</td>
+                <td class="metric positive">+6,403</td>
+                <td class="metric">1.9%</td>
+            </tr>
+        
+            <tr>
+                <td class="url">https://www.legrand.fr/questions-frequentes/comment-installer-un-parafoudre-au-tableau-electrique</td>
+                <td>FAQ</td>
+                <td class="metric">322</td>
+                <td class="metric">218</td>
+                <td class="metric positive">+104</td>
+                <td class="metric">4,910</td>
+                <td class="metric">3,679</td>
+                <td class="metric positive">+1,231</td>
+                <td class="metric">6.6%</td>
+            </tr>
+        
+            <tr>
+                <td class="url">https://www.legrand.fr/catalogue/interrupteurs-et-prises/celiane</td>
+                <td>Catalog</td>
+                <td class="metric">516</td>
+                <td class="metric">415</td>
+                <td class="metric positive">+101</td>
+                <td class="metric">17,171</td>
+                <td class="metric">17,014</td>
+                <td class="metric positive">+157</td>
+                <td class="metric">3.0%</td>
+            </tr>
+        
+            <tr>
+                <td class="url">https://www.legrand.fr/questions-frequentes/le-parafoudre-est-il-obligatoire</td>
+                <td>FAQ</td>
+                <td class="metric">371</td>
+                <td class="metric">270</td>
+                <td class="metric positive">+101</td>
+                <td class="metric">7,659</td>
+                <td class="metric">5,982</td>
+                <td class="metric positive">+1,677</td>
+                <td class="metric">4.8%</td>
+            </tr>
+        
+            <tr>
+                <td class="url">https://www.legrand.fr/questions-frequentes/quelle-courbe-choisir-pour-un-disjoncteur</td>
+                <td>FAQ</td>
+                <td class="metric">665</td>
+                <td class="metric">570</td>
+                <td class="metric positive">+95</td>
+                <td class="metric">7,015</td>
+                <td class="metric">6,052</td>
+                <td class="metric positive">+963</td>
+                <td class="metric">9.5%</td>
+            </tr>
+        
+            <tr>
+                <td class="url">https://www.legrand.fr/mon-projet/tutoriels/comment-installer-et-raccorder-une-prise-electrique-rj-45</td>
+                <td>Projects</td>
+                <td class="metric">384</td>
+                <td class="metric">290</td>
+                <td class="metric positive">+94</td>
+                <td class="metric">13,161</td>
+                <td class="metric">10,548</td>
+                <td class="metric positive">+2,613</td>
+                <td class="metric">2.9%</td>
+            </tr>
+        
+            <tr>
+                <td class="url">https://www.legrand.fr/questions-frequentes/quelle-section-de-cable-electrique-entre-le-compteur-et-le-tableau</td>
+                <td>FAQ</td>
+                <td class="metric">746</td>
+                <td class="metric">659</td>
+                <td class="metric positive">+87</td>
+                <td class="metric">12,665</td>
+                <td class="metric">11,666</td>
+                <td class="metric positive">+999</td>
+                <td class="metric">5.9%</td>
+            </tr>
+        
+            <tr>
+                <td class="url">https://www.legrand.fr/questions-frequentes/comment-effectuer-linstallation-de-ma-prise-de-recharge-pour-voiture-electrique</td>
+                <td>FAQ</td>
+                <td class="metric">406</td>
+                <td class="metric">321</td>
+                <td class="metric positive">+85</td>
+                <td class="metric">17,380</td>
+                <td class="metric">14,109</td>
+                <td class="metric positive">+3,271</td>
+                <td class="metric">2.3%</td>
+            </tr>
+        
+            <tr>
+                <td class="url">https://www.legrand.fr/questions-frequentes/quel-disjoncteur-choisir-pour-proteger-le-circuit-dedie-a-un-four</td>
+                <td>FAQ</td>
+                <td class="metric">512</td>
+                <td class="metric">430</td>
+                <td class="metric positive">+82</td>
+                <td class="metric">7,860</td>
+                <td class="metric">7,375</td>
+                <td class="metric positive">+485</td>
+                <td class="metric">6.5%</td>
+            </tr>
+        
+            <tr>
+                <td class="url">https://www.legrand.fr/pro/catalogue/pret-a-poser-greenup-access-pour-vehicule-electrique-avec-prise-de-courant-saillie-patere-et-disjoncteur-differentiel</td>
+                <td>Professional</td>
+                <td class="metric">204</td>
+                <td class="metric">124</td>
+                <td class="metric positive">+80</td>
+                <td class="metric">5,866</td>
+                <td class="metric">3,355</td>
+                <td class="metric positive">+2,511</td>
+                <td class="metric">3.5%</td>
+            </tr>
+        
+            <tr>
+                <td class="url">https://www.legrand.fr/questions-frequentes/quelle-est-la-norme-nf-c-15-100-pour-la-salle-de-bain</td>
+                <td>FAQ</td>
+                <td class="metric">333</td>
+                <td class="metric">254</td>
+                <td class="metric positive">+79</td>
+                <td class="metric">6,633</td>
+                <td class="metric">6,193</td>
+                <td class="metric positive">+440</td>
+                <td class="metric">5.0%</td>
+            </tr>
+        
+            <tr>
+                <td class="url">https://www.legrand.fr/questions-frequentes/comment-brancher-un-interrupteur-va-et-vient-dans-une-piece</td>
+                <td>FAQ</td>
+                <td class="metric">1,155</td>
+                <td class="metric">1,079</td>
+                <td class="metric positive">+76</td>
+                <td class="metric">51,228</td>
+                <td class="metric">48,402</td>
+                <td class="metric positive">+2,826</td>
+                <td class="metric">2.3%</td>
+            </tr>
+        
+            <tr>
+                <td class="url">https://www.legrand.fr/questions-frequentes/combien-de-radiateurs-par-disjoncteur</td>
+                <td>FAQ</td>
+                <td class="metric">375</td>
+                <td class="metric">299</td>
+                <td class="metric positive">+76</td>
+                <td class="metric">8,796</td>
+                <td class="metric">7,313</td>
+                <td class="metric positive">+1,483</td>
+                <td class="metric">4.3%</td>
+            </tr>
+        
+            <tr>
+                <td class="url">https://www.legrand.fr/catalogue/interrupteurs-et-prises</td>
+                <td>Catalog</td>
+                <td class="metric">564</td>
+                <td class="metric">491</td>
+                <td class="metric positive">+73</td>
+                <td class="metric">48,525</td>
+                <td class="metric">36,854</td>
+                <td class="metric positive">+11,671</td>
+                <td class="metric">1.2%</td>
+            </tr>
+        
+            <tr>
+                <td class="url">https://www.legrand.fr/guides/tout-savoir-sur-la-prise-rj45</td>
+                <td>Guides</td>
+                <td class="metric">646</td>
+                <td class="metric">575</td>
+                <td class="metric positive">+71</td>
+                <td class="metric">31,387</td>
+                <td class="metric">26,606</td>
+                <td class="metric positive">+4,781</td>
+                <td class="metric">2.1%</td>
+            </tr>
+        
+            <tr>
+                <td class="url">https://www.legrand.fr/questions-frequentes/quel-interrupteur-differentiel-choisir</td>
+                <td>FAQ</td>
+                <td class="metric">329</td>
+                <td class="metric">259</td>
+                <td class="metric positive">+70</td>
+                <td class="metric">7,667</td>
+                <td class="metric">6,661</td>
+                <td class="metric positive">+1,006</td>
+                <td class="metric">4.3%</td>
+            </tr>
+        
+            <tr>
+                <td class="url">https://www.legrand.fr/mon-projet/tutoriels/comment-installer-un-pret-a-poser-green-up-access-pour-vehicule-electrique</td>
+                <td>Projects</td>
+                <td class="metric">554</td>
+                <td class="metric">485</td>
+                <td class="metric positive">+69</td>
+                <td class="metric">5,105</td>
+                <td class="metric">4,747</td>
+                <td class="metric positive">+358</td>
+                <td class="metric">10.9%</td>
+            </tr>
+        
+            <tr>
+                <td class="url">https://www.legrand.fr/questions-frequentes/combien-de-disjoncteurs-par-interrupteur-differentiel-63-a</td>
+                <td>FAQ</td>
+                <td class="metric">383</td>
+                <td class="metric">314</td>
+                <td class="metric positive">+69</td>
+                <td class="metric">6,503</td>
+                <td class="metric">5,768</td>
+                <td class="metric positive">+735</td>
+                <td class="metric">5.9%</td>
+            </tr>
+        
+            <tr>
+                <td class="url">https://www.legrand.fr/pro/catalogue</td>
+                <td>Professional</td>
+                <td class="metric">544</td>
+                <td class="metric">476</td>
+                <td class="metric positive">+68</td>
+                <td class="metric">12,895</td>
+                <td class="metric">10,593</td>
+                <td class="metric positive">+2,302</td>
+                <td class="metric">4.2%</td>
+            </tr>
+        
+        </table>
+    </div>
+
+    <div class="category-analysis">
+        <h2>🏷️ Analyse par Catégorie</h2>
+        <table>
+            <tr>
+                <th>Catégorie</th>
+                <th>URLs</th>
+                <th>Total Clics Diff</th>
+                <th>Total Impressions Diff</th>
+            </tr>
+    
+            <tr>
+                <td>FAQ</td>
+                <td class="metric">15</td>
+                <td class="metric positive">+1,632</td>
+                <td class="metric positive">+25,783</td>
+            </tr>
+        
+            <tr>
+                <td>Professional</td>
+                <td class="metric">4</td>
+                <td class="metric positive">+988</td>
+                <td class="metric positive">+33,093</td>
+            </tr>
+        
+            <tr>
+                <td>Homepage</td>
+                <td class="metric">1</td>
+                <td class="metric positive">+488</td>
+                <td class="metric positive">+2,963</td>
+            </tr>
+        
+            <tr>
+                <td>Catalog</td>
+                <td class="metric">2</td>
+                <td class="metric positive">+174</td>
+                <td class="metric positive">+11,828</td>
+            </tr>
+        
+            <tr>
+                <td>Projects</td>
+                <td class="metric">2</td>
+                <td class="metric positive">+163</td>
+                <td class="metric positive">+2,971</td>
+            </tr>
+        
+            <tr>
+                <td>Guides</td>
+                <td class="metric">1</td>
+                <td class="metric positive">+71</td>
+                <td class="metric positive">+4,781</td>
+            </tr>
+        
+        </table>
+    </div>
+
+    <div class="footer">
+        <p><small>Rapport généré le 2025-08-28 à 11:14:08 | Données GSC réelles</small></p>
+    </div>
+</body>
+</html>
+    
