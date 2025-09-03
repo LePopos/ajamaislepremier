@@ -279,9 +279,10 @@ class TrendChartGenerator:
                 future_date_6m = current_date + timedelta(days=180)
                 target_6m = pred_6m.get('target_price', current_price)
                 prob_6m = pred_6m.get('probability_up', 50)
+                prob_down_6m = pred_6m.get('probability_down', 100 - prob_6m)
                 
                 ax.scatter([future_date_6m], [target_6m], s=120, color='orange', 
-                          label=f'Cible 6M: ${target_6m:.2f} ({prob_6m}%)', zorder=5)
+                          label=f'Cible 6M: ${target_6m:.2f} (↗{prob_6m}% ↘{prob_down_6m}%)', zorder=5)
                 
                 # Ligne de prédiction
                 ax.plot([current_date, future_date_6m], [current_price, target_6m], 
@@ -291,9 +292,10 @@ class TrendChartGenerator:
                 future_date_1y = current_date + timedelta(days=365)
                 target_1y = pred_1y.get('target_price', current_price)
                 prob_1y = pred_1y.get('probability_up', 50)
+                prob_down_1y = pred_1y.get('probability_down', 100 - prob_1y)
                 
                 ax.scatter([future_date_1y], [target_1y], s=120, color='green', 
-                          label=f'Cible 1Y: ${target_1y:.2f} ({prob_1y}%)', zorder=5)
+                          label=f'Cible 1Y: ${target_1y:.2f} (↗{prob_1y}% ↘{prob_down_1y}%)', zorder=5)
                 
                 # Ligne de prédiction
                 ax.plot([current_date, future_date_1y], [current_price, target_1y], 

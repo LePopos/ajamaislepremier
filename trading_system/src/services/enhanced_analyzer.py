@@ -298,12 +298,14 @@ class EnhancedAnalyzer:
                     '6_months': {
                         'target_price': round(predicted_6m, 2),
                         'scenarios': {k: round(v, 2) for k, v in scenarios_6m.items()},
-                        'probability_up': prob_up_6m
+                        'probability_up': prob_up_6m,
+                        'probability_down': 100 - prob_up_6m
                     },
                     '1_year': {
                         'target_price': round(predicted_1y, 2),
                         'scenarios': {k: round(v, 2) for k, v in scenarios_1y.items()},
-                        'probability_up': prob_up_1y
+                        'probability_up': prob_up_1y,
+                        'probability_down': 100 - prob_up_1y
                     }
                 },
                 'growth_factors': {
