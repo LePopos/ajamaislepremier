@@ -1,40 +1,20 @@
 from docx import Document
 from docx.shared import Pt, RGBColor, Cm
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.enum.table import WD_ALIGN_VERTICAL
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
+OUTPUT = "/workspaces/ajamaislepremier/clients/cofidis/livrables/cahier_des_charges_maillage_cofidis.docx"
+
 doc = Document()
 
-# Marges
 for section in doc.sections:
     section.top_margin = Cm(2)
     section.bottom_margin = Cm(2)
     section.left_margin = Cm(2.5)
     section.right_margin = Cm(2.5)
 
-# Style de base
-style = doc.styles['Normal']
-style.font.name = 'Arial'
-style.font.size = Pt(10)
-
-
-def add_heading(doc, text, level=1):
-    p = doc.add_paragraph()
-    p.paragraph_format.space_before = Pt(14 if level == 1 else 8)
-    p.paragraph_format.space_after = Pt(4)
-    run = p.add_run(text)
-    run.bold = True
-    run.font.size = Pt(14 if level == 1 else 11)
-    run.font.color.rgb = RGBColor(0x1a, 0x1a, 0x2e) if level == 1 else RGBColor(0x33, 0x33, 0x33)
-    return p
-
-
-def add_body(doc, text):
-    p = doc.add_paragraph(text)
-    p.paragraph_format.space_after = Pt(4)
-    return p
+doc.styles['Normal'].font.name = 'Arial'
+doc.styles['Normal'].font.size = Pt(10)
 
 
 def set_cell_bg(cell, hex_color):
@@ -46,154 +26,152 @@ def set_cell_bg(cell, hex_color):
     tcPr.append(shd)
 
 
-def add_table(doc, headers, rows, header_bg='1a1a2e', header_fg='FFFFFF'):
-    table = doc.add_table(rows=1 + len(rows), cols=len(headers))
-    table.style = 'Table Grid'
+def h1(text):
+    p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(16)
+    p.paragraph_format.space_after = Pt(6)
+    r = p.add_run(text)
+    r.bold = True
+    r.font.size = Pt(13)
+    r.font.color.rgb = RGBColor(0x1a, 0x1a, 0x2e)
 
-    # Header
-    hdr_row = table.rows[0]
-    for i, h in enumerate(headers):
-        cell = hdr_row.cells[i]
-        cell.text = h
-        set_cell_bg(cell, header_bg)
-        run = cell.paragraphs[0].runs[0]
-        run.bold = True
-        run.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
-        run.font.size = Pt(9)
+
+def rule_block(page_type, rules):
+    """One block per page type: bold label + bullet rules."""
+    p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(10)
+    p.paragraph_format.space_after = Pt(2)
+    r = p.add_run(page_type)
+    r.bold = True
+    r.font.size = Pt(10)
+    for rule in rules:
+        bp = doc.add_paragraph(style='List Bullet')
+        bp.paragraph_format.space_after = Pt(1)
+        bp.paragraph_format.left_indent = Cm(0.5)
+        bp.add_run(rule).font.size = Pt(10)
+
+
+def fixed_links_table(urls):
+    table = doc.add_table(rows=len(urls), cols=1)
+    table.style = 'Table Grid'
+    for i, url in enumerate(urls):
+        cell = table.rows[i].cells[0]
+        cell.text = url
+        set_cell_bg(cell, 'F5F5F5' if i % 2 == 0 else 'FFFFFF')
+        cell.paragraphs[0].runs[0].font.size = Pt(9)
         cell.paragraphs[0].paragraph_format.space_before = Pt(2)
         cell.paragraphs[0].paragraph_format.space_after = Pt(2)
-
-    # Rows
-    for r_idx, row_data in enumerate(rows):
-        row = table.rows[r_idx + 1]
-        bg = 'F5F5F5' if r_idx % 2 == 0 else 'FFFFFF'
-        for c_idx, val in enumerate(row_data):
-            cell = row.cells[c_idx]
-            cell.text = val
-            set_cell_bg(cell, bg)
-            cell.paragraphs[0].runs[0].font.size = Pt(9)
-            cell.paragraphs[0].paragraph_format.space_before = Pt(2)
-            cell.paragraphs[0].paragraph_format.space_after = Pt(2)
-
     doc.add_paragraph()
-    return table
 
 
-def add_bullet(doc, text, bold_prefix=None):
-    p = doc.add_paragraph(style='List Bullet')
-    p.paragraph_format.space_after = Pt(2)
-    if bold_prefix:
-        run = p.add_run(bold_prefix)
-        run.bold = True
-        run.font.size = Pt(10)
-        p.add_run(text).font.size = Pt(10)
-    else:
-        p.add_run(text).font.size = Pt(10)
-
-
-# ── TITRE ──────────────────────────────────────────────────────────────────
+# ── TITRE ─────────────────────────────────────────────────────────────────
 p = doc.add_paragraph()
-p.paragraph_format.space_after = Pt(2)
-run = p.add_run('Maillage interne — Règles par type de page')
-run.bold = True
-run.font.size = Pt(18)
-run.font.color.rgb = RGBColor(0x1a, 0x1a, 0x2e)
+p.paragraph_format.space_after = Pt(4)
+r = p.add_run('Règles de maillage interne — Cofidis')
+r.bold = True
+r.font.size = Pt(16)
+r.font.color.rgb = RGBColor(0x1a, 0x1a, 0x2e)
 
-add_body(doc, 'Sur chaque page de contenu, insérer des liens internes organisés en blocs. Ce document définit quels blocs mettre, combien de liens, et comment les sélectionner.')
+p2 = doc.add_paragraph('Principe : sur chaque page de contenu, ajouter des liens vers d\'autres pages du même sujet, organisés en 4 blocs.')
+p2.paragraph_format.space_after = Pt(2)
+p2.runs[0].font.size = Pt(10)
 
 doc.add_paragraph()
 
-# ── 1. LES 4 BLOCS ────────────────────────────────────────────────────────
-add_heading(doc, '1. Les 4 blocs disponibles')
+# ── RÈGLES PAR TYPE DE PAGE ───────────────────────────────────────────────
+h1('Règles par type de page')
 
-add_table(doc,
-    ['Bloc', 'Nom affiché (exemple)', 'Contenu'],
-    [
-        ['BLOC Q&A', '"Questions fréquentes sur le même sujet"', 'Pages Q&A du même thème'],
-        ['BLOC GUIDE', '"Besoin d\'autres conseils sur le même thème ?"', 'Pages guides du même thème'],
-        ['BLOC INCONTOURNABLES', '"À voir aussi"', '6 pages fixes (simulateurs, pages produit clés)'],
-        ['BLOC OUTIL', '"Estimez votre projet"', 'Simulateur(s) du même thème'],
-    ]
-)
+rule_block('Page Q&A', [
+    '5 liens vers d\'autres Q&A du même sujet (ex : "crédit cuisine")',
+    '6 liens vers des guides du même sujet',
+    '2 liens vers le ou les simulateurs du même sujet',
+    '6 liens fixes (voir ci-dessous)',
+])
 
-# ── 2. ACTIVATION PAR TYPE ────────────────────────────────────────────────
-add_heading(doc, '2. Quels blocs activer selon le type de page')
+rule_block('Page Guide', [
+    '5 liens vers des Q&A du même sujet',
+    '6 liens vers d\'autres guides du même sujet',
+    '2 liens vers le ou les simulateurs du même sujet',
+    '6 liens fixes (voir ci-dessous)',
+])
 
-add_table(doc,
-    ['Type de page', 'BLOC Q&A', 'BLOC GUIDE', 'BLOC INCONTOURNABLES', 'BLOC OUTIL'],
-    [
-        ['Page Q&A',     '✅ 5 liens', '✅ 6 liens', '✅ 6 liens', '✅ 2 liens'],
-        ['Page Guide',   '✅ 5 liens', '✅ 6 liens', '✅ 6 liens', '✅ 2 liens'],
-        ['Page Produit', '✅ 5 liens', '✅ 6 liens', '✅ 6 liens', '✅ 2 liens'],
-        ['Page Hub',     '—',          '✅ 6 liens', '✅ 6 liens', '✅ 2 liens'],
-        ['Outil / Simulateur', '—',    '—',          '✅ 6 liens', '—'],
-        ['Lexique',      '—',          '—',          '✅ 6 liens', '—'],
-    ]
-)
+rule_block('Page Produit', [
+    '5 liens vers des Q&A du même sujet',
+    '6 liens vers des guides du même sujet',
+    '2 liens vers le ou les simulateurs du même sujet',
+    '6 liens fixes (voir ci-dessous)',
+])
 
-# ── 3. RÈGLES DE SÉLECTION ────────────────────────────────────────────────
-add_heading(doc, '3. Comment sélectionner les liens de chaque bloc')
+rule_block('Page Hub', [
+    '6 liens vers des guides du même sujet',
+    '2 liens vers le ou les simulateurs du même sujet',
+    '6 liens fixes (voir ci-dessous)',
+])
 
-add_heading(doc, 'BLOC Q&A — 5 liens', level=2)
-add_bullet(doc, 'Prendre les pages Q&A du même thème (ex : toutes les Q&A "crédit cuisine")')
-add_bullet(doc, 'Exclure la page en cours')
+rule_block('Simulateur / Lexique', [
+    '6 liens fixes uniquement (voir ci-dessous)',
+])
 
-add_heading(doc, 'BLOC GUIDE — 6 liens', level=2)
-add_bullet(doc, 'Prendre les pages Guide du même thème')
-add_bullet(doc, 'Si moins de 4 guides dans le thème : compléter avec des guides de thèmes proches (voir §4)')
-add_bullet(doc, 'Exclure la page en cours')
+doc.add_paragraph()
 
-add_heading(doc, 'BLOC INCONTOURNABLES — 6 liens fixes', level=2)
-add_body(doc, 'Ces 6 pages apparaissent sur toutes les pages, sans exception :')
-for url in [
+# ── LIENS FIXES ───────────────────────────────────────────────────────────
+h1('Les 6 liens fixes (présents sur toutes les pages)')
+
+fixed_links_table([
     '/fr/credit/simulation-credit.html',
     '/fr/credit.html',
     '/fr/pret-personnel/pret-sur-mesure.html',
     '/fr/pret-personnel/simulation-pret.html',
     '/fr/credit/credit-renouvelable.html',
     '/fr/credit/credit-consommation.html',
-]:
-    add_bullet(doc, url)
+])
 
-add_heading(doc, 'BLOC OUTIL — 2 liens', level=2)
-add_bullet(doc, 'Prendre le ou les simulateurs du même thème')
-add_bullet(doc, 'Si aucun simulateur thématique : utiliser /fr/pret-personnel/simulation-pret.html par défaut')
+# ── COMMENT TROUVER LE SUJET ──────────────────────────────────────────────
+h1('Comment identifier le sujet d\'une page')
+
+p = doc.add_paragraph('Le sujet est déterminé par l\'URL. Exemples :')
+p.runs[0].font.size = Pt(10)
+p.paragraph_format.space_after = Pt(4)
+
+examples = [
+    ('/fr/pret-personnel/credit-cuisine/...', 'sujet = Crédit cuisine'),
+    ('/fr/pret-renovation-energetique/...', 'sujet = Rénovation énergétique'),
+    ('/fr/pret-personnel/pret-travaux/...', 'sujet = Travaux'),
+    ('/fr/credit/...', 'sujet = Crédit général'),
+]
+table = doc.add_table(rows=1 + len(examples), cols=2)
+table.style = 'Table Grid'
+for i, h in enumerate(['URL (début)', 'Sujet']):
+    cell = table.rows[0].cells[i]
+    cell.text = h
+    set_cell_bg(cell, '1A1A2E')
+    r = cell.paragraphs[0].runs[0]
+    r.bold = True
+    r.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
+    r.font.size = Pt(9)
+    cell.paragraphs[0].paragraph_format.space_before = Pt(2)
+    cell.paragraphs[0].paragraph_format.space_after = Pt(2)
+
+for r_idx, (url, sujet) in enumerate(examples, 1):
+    bg = 'F5F5F5' if r_idx % 2 != 0 else 'FFFFFF'
+    for c_idx, val in enumerate([url, sujet]):
+        cell = table.rows[r_idx].cells[c_idx]
+        cell.text = val
+        set_cell_bg(cell, bg)
+        cell.paragraphs[0].runs[0].font.size = Pt(9)
+        cell.paragraphs[0].paragraph_format.space_before = Pt(2)
+        cell.paragraphs[0].paragraph_format.space_after = Pt(2)
+
+table.columns[0].width = Cm(10)
+table.columns[1].width = Cm(5)
 
 doc.add_paragraph()
 
-# ── 4. THÈMES ────────────────────────────────────────────────────────────
-add_heading(doc, '4. Organisation par thème')
+# ── NOTE ──────────────────────────────────────────────────────────────────
+p = doc.add_paragraph('Note : si un sujet n\'a pas assez de guides (moins de 4), compléter avec des guides de sujets proches. Ex : Crédit cuisine → compléter avec des guides Travaux ou Crédit déco.')
+p.runs[0].font.size = Pt(9)
+p.runs[0].font.color.rgb = RGBColor(0x88, 0x88, 0x88)
+p.paragraph_format.space_before = Pt(6)
 
-add_body(doc, 'Chaque page appartient à un thème, déterminé par son URL.')
-
-add_table(doc,
-    ['Thème', 'URLs concernées (début)', 'Thèmes proches (pour compléter BLOC GUIDE)'],
-    [
-        ['Rénovation énergétique', '/fr/pret-renovation-energetique/', 'Travaux, Crédit général'],
-        ['Travaux',                '/fr/pret-personnel/pret-travaux/', 'Rénovation énergétique, Crédit cuisine, Crédit SDB'],
-        ['Crédit cuisine',         '/fr/pret-personnel/credit-cuisine/', 'Travaux, Crédit déco'],
-        ['Crédit auto',            '/fr/pret-personnel/credit-auto/ ou /fr/credit-auto/', 'Crédit moto'],
-        ['Crédit moto',            '/fr/pret-personnel/credit-moto-scooter/', 'Crédit auto'],
-        ['Crédit salle de bain',   '/fr/pret-personnel/credit-salle-de-bain/', 'Travaux, Crédit cuisine'],
-        ['Crédit déco',            '/fr/pret-personnel/credit-decoration/', 'Crédit cuisine, Travaux'],
-        ['Crédit piscine',         '/fr/pret-personnel/credit-piscine/', '—'],
-        ['Crédit mariage',         '/fr/pret-personnel/credit-mariage/', '—'],
-        ['Crédit voyage',          '/fr/pret-personnel/credit-voyage/', '—'],
-        ['Prêt personnel (générique)', '/fr/pret-personnel/ (autres)', 'Crédit général'],
-        ['Crédit général',         '/fr/credit/, /fr/guide-credit/', 'Prêt personnel, Rachat de crédit'],
-        ['Rachat de crédit',       '/fr/rachat-de-credit/', 'Crédit général'],
-    ]
-)
-
-# ── 5. LIVRABLE ───────────────────────────────────────────────────────────
-add_heading(doc, '5. Livrable')
-
-add_body(doc, 'Un fichier Excel cofidis_maillage_mapping.xlsx sera généré avec :')
-add_bullet(doc, '', bold_prefix='Onglet Mapping : ')
-# patch last bullet
-doc.paragraphs[-1].runs[-1].text = 'pour chaque page, les URLs de chaque bloc prêtes à intégrer'
-add_bullet(doc, '', bold_prefix='Onglet Inventaire : ')
-doc.paragraphs[-1].runs[-1].text = 'toutes les URLs du site classées par type et par thème'
-
-doc.save('/workspaces/ajamaislepremier/cahier_des_charges_maillage_cofidis.docx')
+doc.save(OUTPUT)
 print('Done.')
