@@ -7,6 +7,10 @@ from typing import Dict, List, Optional
 import logging
 import requests
 import json
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import io
+import base64
 
 from ..models.stock_models import TradingSignal, Stock, Recommendation
 from ..config.config import config
@@ -25,6 +29,91 @@ class NotificationService:
         self.recipient_emails = email_config.get('recipient_emails', [])
         self.webhook_url = email_config.get('webhook_url')
         self.expert_analysis = ExpertAnalysis()
+    
+    def _generate_analyst_ratings_chart(self, recommendations: Dict) -> str:
+        """Generate a pie chart for analyst ratings and return as base64 encoded image"""
+        try:
+            if not recommendations or not recommendations.get('total_analysts'):
+                return ""
+            
+            # Get the data
+            buy_count = recommendations.get('buy_count', 0)
+            hold_count = recommendations.get('hold_count', 0)  
+            sell_count = recommendations.get('sell_count', 0)
+            total = buy_count + hold_count + sell_count
+            
+            if total == 0:
+                return ""
+            
+            # Define colors and labels
+            labels = []
+            sizes = []
+            colors = []
+            
+            if buy_count > 0:
+                labels.append(f'Buy ({buy_count})')
+                sizes.append(buy_count)
+                colors.append('#28a745')  # Green
+                
+            if hold_count > 0:
+                labels.append(f'Hold ({hold_count})')
+                sizes.append(hold_count)
+                colors.append('#ffc107')  # Yellow
+                
+            if sell_count > 0:
+                labels.append(f'Sell ({sell_count})')
+                sizes.append(sell_count)
+                colors.append('#dc3545')  # Red
+            
+            # Create the chart
+            fig, ax = plt.subplots(figsize=(8, 6))
+            
+            # Create pie chart
+            wedges, texts, autotexts = ax.pie(sizes, labels=labels, colors=colors, 
+                                             autopct='%1.1f%%', startangle=90,
+                                             textprops={'fontsize': 12})
+            
+            # Improve text styling
+            for autotext in autotexts:
+                autotext.set_color('white')
+                autotext.set_fontweight('bold')
+                autotext.set_fontsize(11)
+            
+            # Add title
+            consensus = recommendations.get('consensus', 'N/A')
+            ticker = recommendations.get('ticker', '')
+            ax.set_title(f'{ticker} - Analyst Ratings\nConsensus: {consensus}', 
+                        fontsize=16, fontweight='bold', pad=20)
+            
+            # Add total analysts count
+            total_analysts = recommendations.get('total_analysts', 0)
+            fig.text(0.5, 0.02, f'Total Analysts: {total_analysts}', 
+                    ha='center', fontsize=12, style='italic')
+            
+            # Equal aspect ratio ensures that pie is drawn as a circle
+            ax.axis('equal')
+            
+            # Set background color
+            fig.patch.set_facecolor('white')
+            
+            # Save to base64
+            buffer = io.BytesIO()
+            plt.savefig(buffer, format='png', bbox_inches='tight', dpi=100, 
+                       facecolor='white', edgecolor='none')
+            buffer.seek(0)
+            
+            # Convert to base64
+            image_base64 = base64.b64encode(buffer.getvalue()).decode()
+            
+            # Clean up
+            plt.close(fig)
+            buffer.close()
+            
+            return f"data:image/png;base64,{image_base64}"
+            
+        except Exception as e:
+            logger.error(f"Error generating analyst ratings chart: {e}")
+            return ""
         
     def send_signal_alert(self, signal: TradingSignal, stock: Stock, 
                          recommendation: Optional[Recommendation] = None) -> bool:
@@ -186,9 +275,29 @@ class NotificationService:
             </div>
             """
         
-        # Recommendation details
+        # Recommendation details with analyst ratings chart
         rec_details = ""
         if recommendation:
+            chart_html = ""
+            
+            # Try to get analyst recommendations and generate chart
+            try:
+                from ..api.tipranks_client import TipRanksClient
+                tipranks_client = TipRanksClient()
+                analyst_recommendations = tipranks_client.get_analyst_recommendations(stock.ticker)
+                
+                # Only generate chart if we have valid data
+                if analyst_recommendations and analyst_recommendations.get('total_analysts', 0) > 0:
+                    chart_base64 = self._generate_analyst_ratings_chart(analyst_recommendations)
+                    if chart_base64:
+                        chart_html = f"""
+                        <div style="text-align: center; margin: 20px 0;">
+                            <img src="{chart_base64}" alt="Analyst Ratings Chart" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        </div>
+                        """
+            except Exception as e:
+                logger.error(f"Error generating analyst chart for {stock.ticker}: {e}")
+            
             rec_details = f"""
             <h3>📊 TipRanks Analysis</h3>
             <ul>
@@ -197,6 +306,8 @@ class NotificationService:
                 <li><strong>Analysts:</strong> {recommendation.num_analysts or 0}</li>
                 <li><strong>Sentiment:</strong> {recommendation.bullish_percent or 0}% Bullish, {recommendation.bearish_percent or 0}% Bearish</li>
             </ul>
+            
+            {chart_html}
             """
         
         # Plum app links and action buttons
