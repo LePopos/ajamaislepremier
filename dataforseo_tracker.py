@@ -20,6 +20,9 @@ import time
 
 import requests
 from requests.auth import HTTPBasicAuth
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Import TipRanks client for stock recommendations
 try:
@@ -71,8 +74,13 @@ class KeywordPosition:
 class DataForSEOTracker:
     def __init__(self, config_file: str = 'dataforseo_config.json'):
         self.config = self.load_config(config_file)
-        self.api_login = self.config['api']['login']
-        self.api_password = self.config['api']['password']
+        self.api_login = os.getenv('DATAFORSEO_LOGIN')
+        self.api_password = os.getenv('DATAFORSEO_PASSWORD')
+        if not self.api_login or not self.api_password:
+            raise RuntimeError(
+                "DATAFORSEO_LOGIN / DATAFORSEO_PASSWORD manquants. "
+                "Définissez-les dans un fichier .env (voir .env.example)."
+            )
         self.base_url = "https://api.dataforseo.com/v3"
         self.session = requests.Session()
         self.session.auth = HTTPBasicAuth(self.api_login, self.api_password)
@@ -95,10 +103,6 @@ class DataForSEOTracker:
     def create_default_config(self, config_file: str):
         """Crée un fichier de configuration par défaut"""
         default_config = {
-            "api": {
-                "login": "YOUR_DATAFORSEO_LOGIN",
-                "password": "YOUR_DATAFORSEO_PASSWORD"
-            },
             "tracking": {
                 "domain": "example.com",
                 "keywords": [
@@ -113,8 +117,6 @@ class DataForSEOTracker:
             "email": {
                 "smtp_server": "smtp.gmail.com",
                 "smtp_port": 587,
-                "sender_email": "your-email@gmail.com",
-                "sender_password": "your-app-password",
                 "recipients": [
                     "recipient1@example.com",
                     "recipient2@example.com"
@@ -828,8 +830,14 @@ class DataForSEOTracker:
         else:
             domain = tracking_configs[0]['domain']
         
+        sender_email = os.getenv('SENDER_EMAIL')
+        sender_password = os.getenv('SENDER_PASSWORD')
+        if not sender_email or not sender_password:
+            print("SENDER_EMAIL / SENDER_PASSWORD manquants dans .env, email non envoyé.")
+            return
+
         msg['Subject'] = f"Rapport SEO {domain} - {datetime.now().strftime('%d/%m/%Y')}"
-        msg['From'] = self.config['email']['sender_email']
+        msg['From'] = sender_email
         msg['To'] = ', '.join(self.config['email']['recipients'])
         
         # Contenu HTML
@@ -854,7 +862,7 @@ class DataForSEOTracker:
         try:
             with smtplib.SMTP(self.config['email']['smtp_server'], self.config['email']['smtp_port']) as server:
                 server.starttls()
-                server.login(self.config['email']['sender_email'], self.config['email']['sender_password'])
+                server.login(sender_email, sender_password)
                 server.send_message(msg)
             
             print(f"✅ Email envoyé à {len(self.config['email']['recipients'])} destinataire(s)")
@@ -912,13 +920,15 @@ class DataForSEOTracker:
                 else:
                     domain = tracking_configs[0]['domain']
                 
+                sender_email = os.getenv('SENDER_EMAIL')
+                sender_password = os.getenv('SENDER_PASSWORD')
                 error_msg['Subject'] = f"❌ Erreur suivi SEO {domain}"
-                error_msg['From'] = self.config['email']['sender_email']
+                error_msg['From'] = sender_email
                 error_msg['To'] = ', '.join(self.config['email']['recipients'])
-                
+
                 with smtplib.SMTP(self.config['email']['smtp_server'], self.config['email']['smtp_port']) as server:
                     server.starttls()
-                    server.login(self.config['email']['sender_email'], self.config['email']['sender_password'])
+                    server.login(sender_email, sender_password)
                     server.send_message(error_msg)
                     
             except Exception as email_error:

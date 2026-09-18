@@ -1,0 +1,26 @@
+{
+    "tracking": [
+        {
+            "domain": "example.com",
+            "keywords": [
+                "mot-clé 1",
+                "mot-clé 2"
+            ],
+            "location_code": 2250,
+            "language_code": "fr",
+            "device": "desktop"
+        }
+    ],
+    "email": {
+        "smtp_server": "smtp.gmail.com",
+        "smtp_port": 587,
+        "recipients": [
+            "recipient@example.com"
+        ]
+    },
+    "reports": {
+        "csv_export": true,
+        "csv_filename": "positions_report_{date}.csv",
+        "history_days": 30
+    }
+}

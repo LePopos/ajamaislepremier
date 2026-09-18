@@ -1,1 +1,17 @@
 README_ONFAITCAPROPRE.md
+
+# Secrets - never commit these
+.env
+.env.*
+!.env.example
+!trading_system/.env.example
+dataforseo_config.json
+trading_system/.env
+
+# Python
+__pycache__/
+*.pyc
+
+# Runtime data
+trading_system/logs/*.log
+trading_system/trading_data.db
